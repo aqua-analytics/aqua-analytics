@@ -730,6 +730,9 @@ class AquaAnalyticsPremium:
                 <div>
                     <div class="brand-title">Aqua-Analytics</div>
                     <div class="brand-subtitle">환경 데이터 인사이트</div>
+                    <div style="background: #dcfce7; color: #166534; font-size: 0.7rem; padding: 4px 8px; border-radius: 4px; margin-top: 4px; text-align: center;">
+                        🏢 로컬 서버 버전
+                    </div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
