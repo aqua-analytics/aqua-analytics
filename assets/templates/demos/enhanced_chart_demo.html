@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>향상된 부적합 통계 차트 - 실험실 품질관리 대시보드</title>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        .chart-container {
+            transition: all 0.3s ease;
+        }
+        .chart-container:hover {
+            transform: translateY(-2px);
+        }
+        .chart-card {
+            transition: all 0.3s ease;
+        }
+        .chart-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        .animate-pulse-slow {
+            animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- 헤더 -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-800 mb-2">부적합 통계 차트 시스템</h1>
+                    <p class="text-slate-600">향상된 애니메이션과 인터랙션 기능이 적용된 차트</p>
+                </div>
+                <div class="flex space-x-3">
+                    <button onclick="updateChartsWithAnimation()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        데이터 새로고침
+                    </button>
+                    <button onclick="exportChart('donut')" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        차트 내보내기
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 통계 요약 카드 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium opacity-90">총 시험 건수</h3>
+                        <p class="text-3xl font-bold">24건</p>
+                        <div class="mt-2 text-xs opacity-75">전체 데이터</div>
+                    </div>
+                    <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gradient-to-r from-red-500 to-red-600 text-white p-6 rounded-xl shadow-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium opacity-90">부적합 건수</h3>
+                        <p class="text-3xl font-bold">6건</p>
+                        <div class="mt-2 text-xs opacity-75">기준 초과</div>
+                    </div>
+                    <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-xl shadow-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium opacity-90">적합률</h3>
+                        <p class="text-3xl font-bold">75.0%</p>
+                        <div class="mt-2 text-xs opacity-75">품질 지표</div>
+                    </div>
+                    <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-xl shadow-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium opacity-90">시험 항목</h3>
+                        <p class="text-3xl font-bold">8개</p>
+                        <div class="mt-2 text-xs opacity-75">분석 범위</div>
+                    </div>
+                    <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 메인 차트 영역 -->
+        <div class="charts-container grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- 부적합 분포 도넛 차트 -->
+            <div class="chart-card bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center">
+                        <h3 class="text-xl font-semibold text-slate-800">부적합 항목별 분포</h3>
+                        <div class="ml-3 flex items-center space-x-2">
+                            <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse-slow"></div>
+                            <span class="text-xs text-slate-500">실시간</span>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="toggleChartFullscreen('donut-chart')" class="p-2 text-slate-400 hover:text-slate-600 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                            </svg>
+                        </button>
+                        <button onclick="exportChart('donut')" class="p-2 text-slate-400 hover:text-slate-600 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div id="donut-chart" class="chart-container"></div>
+                <div class="mt-4 text-xs text-slate-500 text-center">
+                    클릭하여 상세 정보 확인
+                </div>
+            </div>
+            
+            <!-- 부적합 비율 막대 차트 -->
+            <div class="chart-card bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center">
+                        <h3 class="text-xl font-semibold text-slate-800">부적합 비율 (항목별)</h3>
+                        <div class="ml-3 flex items-center space-x-2">
+                            <div class="w-3 h-3 bg-orange-500 rounded-full animate-pulse-slow"></div>
+                            <span class="text-xs text-slate-500">비율 분석</span>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="toggleChartFullscreen('bar-chart')" class="p-2 text-slate-400 hover:text-slate-600 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                            </svg>
+                        </button>
+                        <button onclick="exportChart('bar')" class="p-2 text-slate-400 hover:text-slate-600 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div id="bar-chart" class="chart-container"></div>
+                <div class="mt-4 text-xs text-slate-500 text-center">
+                    높은 비율 항목 우선 개선 필요
+                </div>
+            </div>
+        </div>
+        
+        <!-- 차트 해석 가이드 -->
+        <div class="bg-slate-100 rounded-xl p-6">
+            <h4 class="font-semibold text-slate-800 mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                </svg>
+                차트 해석 가이드
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-slate-600">
+                <div class="bg-white p-4 rounded-lg">
+                    <h5 class="font-medium text-slate-700 mb-3 flex items-center">
+                        🍩 분포 차트 (도넛 차트)
+                    </h5>
+                    <ul class="space-y-2">
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-red-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                            부적합 항목별 절대 건수 표시
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-red-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                            전체 부적합 중 비중 확인
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-red-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                            주요 문제 항목 식별
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                            클릭하여 상세 정보 확인 가능
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-white p-4 rounded-lg">
+                    <h5 class="font-medium text-slate-700 mb-3 flex items-center">
+                        📊 비율 차트 (수평 막대 차트)
+                    </h5>
+                    <ul class="space-y-2">
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-orange-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                            각 항목별 부적합 발생률
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-orange-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                            상대적 위험도 평가
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-orange-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                            개선 우선순위 결정
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                            그라데이션 효과로 시각적 강조
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 샘플 데이터
+        const sampleData = {
+            donut: {
+                series: [3, 2, 1],
+                labels: ["pH", "대장균", "탁도"]
+            },
+            bar: {
+                data: [100.0, 60.0, 33.3],
+                categories: ["대장균", "pH", "탁도"]
+            }
+        };
+
+        // 향상된 도넛 차트 설정
+        const donutChartConfig = {
+            chart: {
+                type: 'donut',
+                height: 380,
+                fontFamily: 'Noto Sans KR, sans-serif',
+                animations: {
+                    enabled: true,
+                    easing: 'easeinout',
+                    speed: 1500,
+                    animateGradually: {
+                        enabled: true,
+                        delay: 300
+                    },
+                    dynamicAnimation: {
+                        enabled: true,
+                        speed: 800
+                    }
+                },
+                toolbar: {
+                    show: false
+                },
+                dropShadow: {
+                    enabled: true,
+                    top: 3,
+                    left: 3,
+                    blur: 6,
+                    opacity: 0.15
+                }
+            },
+            series: sampleData.donut.series,
+            labels: sampleData.donut.labels,
+            colors: ['#ef4444', '#f59e0b', '#10b981'],
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '68%',
+                        labels: {
+                            show: true,
+                            name: {
+                                show: true,
+                                fontSize: '15px',
+                                fontWeight: 600,
+                                color: '#374151',
+                                offsetY: -12
+                            },
+                            value: {
+                                show: true,
+                                fontSize: '26px',
+                                fontWeight: 700,
+                                color: '#ef4444',
+                                offsetY: 12,
+                                formatter: function(val) { return val + "건"; }
+                            },
+                            total: {
+                                show: true,
+                                showAlways: true,
+                                label: '총 부적합',
+                                fontSize: '13px',
+                                fontWeight: 600,
+                                color: '#6b7280',
+                                formatter: function(w) { return "6건"; }
+                            }
+                        }
+                    },
+                    expandOnClick: true,
+                    customScale: 1.15
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                formatter: function(val, opts) { return val.toFixed(1) + "%"; },
+                style: {
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    colors: ['#ffffff']
+                },
+                dropShadow: {
+                    enabled: true,
+                    top: 1,
+                    left: 1,
+                    blur: 2,
+                    opacity: 0.9
+                }
+            },
+            legend: {
+                position: 'bottom',
+                fontSize: '11px',
+                fontFamily: 'Noto Sans KR, sans-serif',
+                itemMargin: {
+                    horizontal: 10,
+                    vertical: 5
+                },
+                markers: {
+                    width: 10,
+                    height: 10,
+                    radius: 5
+                }
+            },
+            tooltip: {
+                enabled: true,
+                style: {
+                    fontSize: '12px',
+                    fontFamily: 'Noto Sans KR, sans-serif'
+                },
+                y: {
+                    formatter: function(val) { return val + "건"; }
+                }
+            },
+            stroke: {
+                show: true,
+                colors: ['#ffffff'],
+                width: 2
+            },
+            states: {
+                hover: {
+                    filter: {
+                        type: 'lighten',
+                        value: 0.1
+                    }
+                },
+                active: {
+                    allowMultipleDataPointsSelection: false,
+                    filter: {
+                        type: 'darken',
+                        value: 0.25
+                    }
+                }
+            }
+        };
+
+        // 향상된 막대 차트 설정
+        const barChartConfig = {
+            chart: {
+                type: 'bar',
+                height: 420,
+                fontFamily: 'Noto Sans KR, sans-serif',
+                animations: {
+                    enabled: true,
+                    easing: 'easeinout',
+                    speed: 1800,
+                    animateGradually: {
+                        enabled: true,
+                        delay: 400
+                    },
+                    dynamicAnimation: {
+                        enabled: true,
+                        speed: 1000
+                    }
+                },
+                toolbar: {
+                    show: false
+                },
+                dropShadow: {
+                    enabled: true,
+                    top: 3,
+                    left: 3,
+                    blur: 6,
+                    opacity: 0.15
+                }
+            },
+            plotOptions: {
+                bar: {
+                    horizontal: true,
+                    borderRadius: 8,
+                    borderRadiusApplication: 'end',
+                    barHeight: '65%',
+                    dataLabels: {
+                        position: 'center'
+                    }
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                formatter: function(val) { return val + "%"; },
+                style: {
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    colors: ['#ffffff']
+                },
+                dropShadow: {
+                    enabled: true,
+                    top: 1,
+                    left: 1,
+                    blur: 2,
+                    opacity: 0.9
+                }
+            },
+            series: [{
+                name: '부적합 비율',
+                data: sampleData.bar.data
+            }],
+            xaxis: {
+                categories: sampleData.bar.categories,
+                labels: {
+                    style: {
+                        fontSize: '11px',
+                        fontFamily: 'Noto Sans KR, sans-serif'
+                    },
+                    formatter: function(val) { return val + "%"; }
+                },
+                axisBorder: {
+                    show: true,
+                    color: '#e5e7eb'
+                },
+                axisTicks: {
+                    show: true,
+                    color: '#e5e7eb'
+                }
+            },
+            yaxis: {
+                labels: {
+                    style: {
+                        fontSize: '11px',
+                        fontFamily: 'Noto Sans KR, sans-serif',
+                        colors: ['#374151']
+                    },
+                    maxWidth: 150
+                }
+            },
+            colors: ['#ef4444'],
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shade: 'light',
+                    type: 'horizontal',
+                    shadeIntensity: 0.5,
+                    gradientToColors: ['#fca5a5'],
+                    inverseColors: false,
+                    opacityFrom: 1.0,
+                    opacityTo: 0.85,
+                    stops: [0, 30, 70, 100],
+                    colorStops: [
+                        { offset: 0, color: '#dc2626', opacity: 1 },
+                        { offset: 30, color: '#ef4444', opacity: 0.95 },
+                        { offset: 70, color: '#f87171', opacity: 0.9 },
+                        { offset: 100, color: '#fca5a5', opacity: 0.85 }
+                    ]
+                }
+            },
+            tooltip: {
+                enabled: true,
+                style: {
+                    fontSize: '12px',
+                    fontFamily: 'Noto Sans KR, sans-serif'
+                },
+                y: {
+                    formatter: function(val) { return val + "%"; }
+                }
+            },
+            grid: {
+                show: true,
+                borderColor: '#e5e7eb',
+                strokeDashArray: 3,
+                position: 'back',
+                xaxis: {
+                    lines: { show: true }
+                },
+                yaxis: {
+                    lines: { show: false }
+                },
+                row: {
+                    colors: ['transparent', '#f9fafb'],
+                    opacity: 0.5
+                }
+            },
+            stroke: {
+                show: true,
+                width: 1,
+                colors: ['transparent']
+            },
+            states: {
+                hover: {
+                    filter: {
+                        type: 'lighten',
+                        value: 0.08
+                    }
+                },
+                active: {
+                    allowMultipleDataPointsSelection: false,
+                    filter: {
+                        type: 'darken',
+                        value: 0.15
+                    }
+                }
+            }
+        };
+
+        // 차트 초기화
+        function initializeEnhancedCharts() {
+            // 도넛 차트 초기화
+            if (document.querySelector("#donut-chart")) {
+                window.donutChart = new ApexCharts(
+                    document.querySelector("#donut-chart"),
+                    donutChartConfig
+                );
+                window.donutChart.render();
+            }
+            
+            // 막대 차트 초기화
+            if (document.querySelector("#bar-chart")) {
+                window.barChart = new ApexCharts(
+                    document.querySelector("#bar-chart"),
+                    barChartConfig
+                );
+                window.barChart.render();
+            }
+            
+            // 향상된 인터랙션 초기화
+            initializeEnhancedChartInteractions();
+            
+            // 차트 로딩 완료 표시
+            setTimeout(() => {
+                document.querySelectorAll('.chart-container').forEach(container => {
+                    container.classList.add('chart-loaded');
+                });
+            }, 1000);
+        }
+
+        // 향상된 차트 인터랙션 기능
+        function initializeEnhancedChartInteractions() {
+            // 차트 호버 효과 강화
+            enhanceChartHoverEffects();
+        }
+
+        // 차트 호버 효과 강화
+        function enhanceChartHoverEffects() {
+            const chartCards = document.querySelectorAll('.chart-card');
+            chartCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-4px)';
+                    this.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+                });
+            });
+        }
+
+        // 애니메이션과 함께 차트 업데이트
+        function updateChartsWithAnimation() {
+            // 로딩 표시
+            showChartLoading();
+            
+            // 차트 페이드 아웃 효과
+            fadeOutCharts();
+            
+            setTimeout(() => {
+                // 새로운 샘플 데이터 (시뮬레이션)
+                const newDonutData = {
+                    series: [4, 3, 2, 1],
+                    labels: ["pH", "대장균", "탁도", "염소"]
+                };
+                
+                const newBarData = {
+                    data: [80.0, 75.0, 50.0, 25.0],
+                    categories: ["대장균", "pH", "탁도", "염소"]
+                };
+                
+                // 도넛 차트 업데이트
+                if (window.donutChart) {
+                    window.donutChart.updateSeries(newDonutData.series);
+                    window.donutChart.updateOptions({
+                        labels: newDonutData.labels,
+                        plotOptions: {
+                            pie: {
+                                donut: {
+                                    labels: {
+                                        total: {
+                                            formatter: function(w) { return "10건"; }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                // 막대 차트 업데이트
+                if (window.barChart) {
+                    window.barChart.updateSeries([{
+                        name: '부적합 비율',
+                        data: newBarData.data
+                    }]);
+                    window.barChart.updateOptions({
+                        xaxis: {
+                            categories: newBarData.categories
+                        }
+                    });
+                }
+                
+                // 차트 페이드 인 효과
+                setTimeout(() => {
+                    fadeInCharts();
+                    hideChartLoading();
+                    showUpdateSuccess();
+                }, 800);
+            }, 300);
+        }
+
+        // 차트 페이드 아웃 효과
+        function fadeOutCharts() {
+            const chartContainers = document.querySelectorAll('.chart-container');
+            chartContainers.forEach(container => {
+                container.style.transition = 'opacity 0.3s ease-out';
+                container.style.opacity = '0.3';
+            });
+        }
+
+        // 차트 페이드 인 효과
+        function fadeInCharts() {
+            const chartContainers = document.querySelectorAll('.chart-container');
+            chartContainers.forEach(container => {
+                container.style.transition = 'opacity 0.5s ease-in';
+                container.style.opacity = '1';
+            });
+        }
+
+        // 로딩 표시 함수
+        function showChartLoading() {
+            const chartCards = document.querySelectorAll('.chart-card');
+            chartCards.forEach(card => {
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'chart-loading-overlay';
+                loadingDiv.innerHTML = `
+                    <div class="flex items-center justify-center h-full">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
+                        <span class="ml-2 text-slate-600">업데이트 중...</span>
+                    </div>
+                `;
+                loadingDiv.style.cssText = `
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(255, 255, 255, 0.9);
+                    z-index: 10;
+                    border-radius: 0.75rem;
+                `;
+                card.style.position = 'relative';
+                card.appendChild(loadingDiv);
+            });
+        }
+
+        // 로딩 숨김 함수
+        function hideChartLoading() {
+            const loadingOverlays = document.querySelectorAll('.chart-loading-overlay');
+            loadingOverlays.forEach(overlay => {
+                overlay.style.transition = 'opacity 0.3s ease-out';
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.remove(), 300);
+            });
+        }
+
+        // 업데이트 성공 표시
+        function showUpdateSuccess() {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'update-success-notification';
+            successDiv.innerHTML = `
+                <div class="bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                    차트가 업데이트되었습니다
+                </div>
+            `;
+            successDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 1000;
+                animation: slideInRight 0.3s ease-out;
+            `;
+            
+            document.body.appendChild(successDiv);
+            
+            setTimeout(() => {
+                successDiv.style.animation = 'slideOutRight 0.3s ease-in';
+                setTimeout(() => successDiv.remove(), 300);
+            }, 2000);
+        }
+
+        // 차트 내보내기 기능
+        function exportChart(chartType) {
+            const chart = chartType === 'donut' ? window.donutChart : window.barChart;
+            if (chart) {
+                chart.dataURI().then(({ imgURI, blob }) => {
+                    const link = document.createElement('a');
+                    link.href = imgURI;
+                    link.download = `${chartType}_chart_${new Date().toISOString().split('T')[0]}.png`;
+                    link.click();
+                });
+            }
+        }
+
+        // 차트 전체화면 토글
+        function toggleChartFullscreen(chartId) {
+            const chartContainer = document.getElementById(chartId);
+            const chartCard = chartContainer.closest('.chart-card');
+            
+            if (!chartCard.classList.contains('fullscreen')) {
+                chartCard.classList.add('fullscreen');
+                chartCard.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    z-index: 1000;
+                    background: white;
+                    padding: 2rem;
+                `;
+                
+                // 차트 크기 재조정
+                setTimeout(() => {
+                    const chart = chartId === 'donut-chart' ? window.donutChart : window.barChart;
+                    if (chart) {
+                        chart.updateOptions({
+                            chart: {
+                                height: window.innerHeight - 200
+                            }
+                        });
+                    }
+                }, 100);
+                
+                // ESC 키로 전체화면 해제
+                document.addEventListener('keydown', handleFullscreenEscape);
+            } else {
+                exitChartFullscreen(chartId);
+            }
+        }
+
+        // 전체화면 해제
+        function exitChartFullscreen(chartId) {
+            const chartContainer = document.getElementById(chartId);
+            const chartCard = chartContainer.closest('.chart-card');
+            
+            chartCard.classList.remove('fullscreen');
+            chartCard.style.cssText = '';
+            
+            // 차트 크기 원복
+            setTimeout(() => {
+                const chart = chartId === 'donut-chart' ? window.donutChart : window.barChart;
+                if (chart) {
+                    chart.updateOptions({
+                        chart: {
+                            height: chartId === 'donut-chart' ? 380 : 420
+                        }
+                    });
+                }
+            }, 100);
+            
+            document.removeEventListener('keydown', handleFullscreenEscape);
+        }
+
+        // ESC 키 핸들러
+        function handleFullscreenEscape(event) {
+            if (event.key === 'Escape') {
+                const fullscreenChart = document.querySelector('.chart-card.fullscreen');
+                if (fullscreenChart) {
+                    const chartContainer = fullscreenChart.querySelector('[id$="-chart"]');
+                    if (chartContainer) {
+                        exitChartFullscreen(chartContainer.id);
+                    }
+                }
+            }
+        }
+
+        // DOM 로드 완료 시 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeEnhancedCharts();
+        });
+    </script>
+</body>
+</html>

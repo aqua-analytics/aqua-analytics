@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>실험실 품질관리 대시보드</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        .sidebar-icon { width: 20px; height: 20px; }
+        .bottom-sheet {
+            transition: transform 0.3s ease-in-out;
+            transform: translateY(100%);
+        }
+        .bottom-sheet.show {
+            transform: translateY(0);
+        }
+        .modal-backdrop {
+            background-color: rgba(0,0,0,0.5);
+        }
+        .standards-table {
+            font-size: 0.875rem;
+        }
+        .violation-highlight {
+            background: linear-gradient(90deg, #fef2f2 0%, #fee2e2 100%);
+            border-left: 4px solid #ef4444;
+        }
+    </style>
+</head>
+<body class="bg-slate-100">
+
+    <div class="flex h-screen">
+        <!-- A. 사이드바 (탐색 패널) -->
+        <aside class="w-64 bg-white shadow-lg flex flex-col">
+            <div class="p-4 border-b">
+                <h1 class="text-xl font-bold text-slate-800">분석 시스템</h1>
+            </div>
+            <div class="p-4 border-b">
+                <h2 class="text-xs font-bold text-slate-500 uppercase mb-2">현재 조회 파일</h2>
+                <ul class="space-y-2" id="file-list">
+                    <!-- JS로 동적 생성 -->
+                </ul>
+            </div>
+            <nav class="flex-1 p-4">
+                <h2 class="text-xs font-bold text-slate-500 uppercase mb-2">메뉴</h2>
+                <ul class="space-y-2">
+                    <li><a href="#" class="flex items-center p-2 text-slate-600 rounded-lg hover:bg-slate-100"><svg class="sidebar-icon mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>처리 대기 파일</a></li>
+                    <li><a href="#" class="flex items-center p-2 text-slate-600 rounded-lg hover:bg-slate-100"><svg class="sidebar-icon mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>시험성적서 목록</a></li>
+                    <li><a href="#" class="flex items-center p-2 text-slate-600 rounded-lg hover:bg-slate-100"><svg class="sidebar-icon mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>규격 목록</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- B. 메인 콘텐츠 (분석 대시보드) -->
+        <main class="flex-1 p-6 overflow-y-auto">
+            <!-- B-1. 프로젝트 헤더 -->
+            <header class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 id="project-title" class="text-2xl font-bold text-slate-800"></h2>
+                    <p id="analysis-period" class="text-sm text-slate-600 mt-1"></p>
+                </div>
+                <button id="show-report-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">
+                    품질관리 보고서
+                </button>
+            </header>
+
+            <!-- B-2. 핵심 요약 (KPI 카드) -->
+            <div id="kpi-cards" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                <!-- JS로 동적 생성 -->
+            </div>
+
+            <!-- B-3. 부적합 통계 (시각화 차트) -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="font-bold text-slate-800 mb-4">부적합 항목별 분포</h3>
+                    <div id="donut-chart"></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="font-bold text-slate-800 mb-4">항목별 부적합 제품 현황</h3>
+                    <div id="product-violation-chart"></div>
+                </div>
+            </div>
+
+            <!-- B-4. 부적합 시료 목록 -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-md">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-slate-800">부적합 시료 목록</h3>
+                        <span id="violation-count" class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-semibold"></span>
+                    </div>
+                    <div class="overflow-y-auto max-h-96">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0">
+                                <tr>
+                                    <th class="px-4 py-3">접수번호</th>
+                                    <th class="px-4 py-3">시료명</th>
+                                    <th class="px-4 py-3">항목</th>
+                                    <th class="px-4 py-3">초과결과</th>
+                                    <th class="px-4 py-3">판정</th>
+                                </tr>
+                            </thead>
+                            <tbody id="violation-table-body">
+                                <!-- JS로 동적 생성 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- B-5. 기준값 정보 테이블 -->
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4">시험 기준값 정보</h3>
+                    <div class="overflow-y-auto max-h-96">
+                        <table class="w-full text-sm standards-table">
+                            <thead class="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0">
+                                <tr>
+                                    <th class="px-3 py-2">시험항목</th>
+                                    <th class="px-3 py-2">단위</th>
+                                    <th class="px-3 py-2">기준값</th>
+                                </tr>
+                            </thead>
+                            <tbody id="standards-table-body">
+                                <!-- JS로 동적 생성 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- B-6. 전체 데이터 요약 -->
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <h3 class="text-xl font-bold text-slate-800 mb-4">전체 시료 현황</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                            <tr>
+                                <th class="px-4 py-3">시료명</th>
+                                <th class="px-4 py-3">접수번호</th>
+                                <th class="px-4 py-3">시험항목</th>
+                                <th class="px-4 py-3">결과</th>
+                                <th class="px-4 py-3">기준값</th>
+                                <th class="px-4 py-3">판정</th>
+                            </tr>
+                        </thead>
+                        <tbody id="all-data-table-body">
+                            <!-- JS로 동적 생성 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 시험성적서 미리보기 모달 -->
+    <div id="report-modal" class="fixed inset-0 z-50 items-center justify-center hidden">
+        <div class="modal-backdrop fixed inset-0"></div>
+        <div class="bg-white rounded-lg shadow-xl w-11/12 max-w-4xl h-5/6 relative flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 class="text-lg font-bold">시험성적서 미리보기</h3>
+                <button id="close-report-btn" class="text-slate-500 hover:text-slate-800">&times;</button>
+            </div>
+            <div class="p-4 flex-grow overflow-y-auto">
+                <img src="https://placehold.co/800x1131/F0F0F0/333?text=Sample+Test+Report" alt="시험성적서 샘플" class="w-full h-auto">
+            </div>
+            <div class="p-4 border-t bg-slate-50 text-right space-x-2">
+                 <button class="bg-slate-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-600 transition">인쇄</button>
+                 <button class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition">PDF로 저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 규격 파일 미리보기 바텀 시트 -->
+    <div id="standard-bottom-sheet" class="fixed bottom-0 left-0 right-0 h-4/5 bg-white shadow-2xl z-50 bottom-sheet">
+        <div class="p-4 border-b flex justify-between items-center">
+            <h3 id="standard-title" class="text-lg font-bold"></h3>
+            <button id="close-standard-btn" class="text-slate-500 hover:text-slate-800">&times;</button>
+        </div>
+        <div class="p-4 h-[calc(100%-120px)] overflow-y-auto">
+             <img src="https://placehold.co/800x1131/F0F0F0/333?text=Sample+Standard+Document" alt="규격문서 샘플" class="w-full h-auto">
+        </div>
+        <div class="p-4 border-t bg-slate-50 text-right">
+             <button class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">규격 파일 다운로드</button>
+        </div>
+    </div>
+
+
+<script>
+
+        // 실제 데이터로 교체
+        const projects = {
+            'COWAY_품질관리_PJT': {
+  "fileName": "COWAY_품질관리.xlsx",
+  "period": "2025.01.23 – 2025.01.23 분석",
+  "data": [
+    {
+      "id": 1,
+      "sampleName": "냉수탱크",
+      "analysisNumber": "25A00001-001",
+      "testItem": "아크릴로나이트릴",
+      "result": "불검출",
+      "numericResult": 0,
+      "unit": "mg/L",
+      "status": "적합"
+    },
+    {
+      "id": 2,
+      "sampleName": "온수탱크",
+      "analysisNumber": "25A00002-002",
+      "testItem": "아크릴로나이트릴",
+      "result": "불검출",
+      "numericResult": 0,
+      "unit": "mg/L",
+      "status": "적합"
+    },
+    {
+      "id": 3,
+      "sampleName": "Blank",
+      "analysisNumber": "25A00003-003",
+      "testItem": "아크릴로나이트릴",
+      "result": "0.0007",
+      "numericResult": 0.0007,
+      "unit": "mg/L",
+      "status": "부적합"
+    },
+    {
+      "id": 4,
+      "sampleName": "제품#1",
+      "analysisNumber": "25A00004-004",
+      "testItem": "아크릴로나이트릴",
+      "result": "0.001",
+      "numericResult": 0.001,
+      "unit": "mg/L",
+      "status": "부적합"
+    },
+    {
+      "id": 5,
+      "sampleName": "제품#2",
+      "analysisNumber": "25A00005-005",
+      "testItem": "아크릴로나이트릴",
+      "result": "0.0004",
+      "numericResult": 0.0004,
+      "unit": "mg/L",
+      "status": "적합"
+    },
+    {
+      "id": 6,
+      "sampleName": "원수",
+      "analysisNumber": "25A00006-006",
+      "testItem": "N-니트로조다이메틸아민",
+      "result": "2.29",
+      "numericResult": 2.29,
+      "unit": "ng/L",
+      "status": "부적합"
+    },
+    {
+      "id": 7,
+      "sampleName": "5700용출",
+      "analysisNumber": "25A00007-007",
+      "testItem": "N-니트로조다이메틸아민",
+      "result": "1.96",
+      "numericResult": 1.96,
+      "unit": "ng/L",
+      "status": "부적합"
+    },
+    {
+      "id": 8,
+      "sampleName": "P09CL용출",
+      "analysisNumber": "25A00008-008",
+      "testItem": "N-니트로조다이메틸아민",
+      "result": "3.4",
+      "numericResult": 3.4,
+      "unit": "ng/L",
+      "status": "부적합"
+    },
+    {
+      "id": 9,
+      "sampleName": "1300L#2",
+      "analysisNumber": "25A00009-009",
+      "testItem": "N-니트로조다이메틸아민",
+      "result": "3.37",
+      "numericResult": 3.37,
+      "unit": "ng/L",
+      "status": "부적합"
+    },
+    {
+      "id": 10,
+      "sampleName": "1300L#4",
+      "analysisNumber": "25A000010-0010",
+      "testItem": "N-니트로조다이메틸아민",
+      "result": "2.5",
+      "numericResult": 2.5,
+      "unit": "ng/L",
+      "status": "부적합"
+    }
+  ]
+}
+        };
+        
+        const standards = {
+  "아크릴로나이트릴": {
+    "value": 0.0006,
+    "unit": "mg/L",
+    "criteria": "0.0006 mg/L 이하"
+  },
+  "N-니트로조다이메틸아민": {
+    "value": 0.1,
+    "unit": "ng/L",
+    "criteria": "0.1 ng/L 이하"
+  }
+};
+        
+        // 전역 변수로 설정
+        window.actualProjects = projects;
+        window.actualStandards = standards;
+        
+        // 기존 데이터를 실제 데이터로 교체
+        if (typeof renderDashboard === 'function') {
+            // 페이지 로드 후 실제 데이터로 대시보드 렌더링
+            setTimeout(() => {
+                Object.assign(window.projects || {}, projects);
+                Object.assign(window.standards || {}, standards);
+                
+                // 첫 번째 프로젝트로 대시보드 렌더링
+                const firstProject = Object.keys(projects)[0];
+                if (firstProject && typeof renderDashboard === 'function') {
+                    renderDashboard(firstProject);
+                }
+            }, 100);
+        }
+        
+
+  // <script>와 </script> 태그 제거
+</script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        .sidebar-icon { width: 20px; height: 20px; }
+        .bottom-sheet {
+            transition: transform 0.3s ease-in-out;
+            transform: translateY(100%);
+        }
+        .bottom-sheet.show {
+            transform: translateY(0);
+        }
+        .modal-backdrop {
+            background-color: rgba(0,0,0,0.5);
+        }
+        .standards-table {
+            font-size: 0.875rem;
+        }
+        .violation-highlight {
+            background: linear-gradient(90deg, #fef2f2 0%, #fee2e2 100%);
+            border-left: 4px solid #ef4444;
+        }
+    </style>
+</head>
+<body class="bg-slate-100">
+
+    <div class="flex h-screen">
+        <!-- A. 사이드바 (탐색 패널) -->
+        <aside class="w-64 bg-white shadow-lg flex flex-col">
+            <div class="p-4 border-b">
+                <h1 class="text-xl font-bold text-slate-800">분석 시스템</h1>
+            </div>
+            <div class="p-4 border-b">
+                <h2 class="text-xs font-bold text-slate-500 uppercase mb-2">현재 조회 파일</h2>
+                <ul class="space-y-2" id="file-list">
+                    <!-- JS로 동적 생성 -->
+                </ul>
+            </div>
+            <nav class="flex-1 p-4">
+                <h2 class="text-xs font-bold text-slate-500 uppercase mb-2">메뉴</h2>
+                <ul class="space-y-2">
+                    <li><a href="#" class="flex items-center p-2 text-slate-600 rounded-lg hover:bg-slate-100"><svg class="sidebar-icon mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>처리 대기 파일</a></li>
+                    <li><a href="#" class="flex items-center p-2 text-slate-600 rounded-lg hover:bg-slate-100"><svg class="sidebar-icon mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>시험성적서 목록</a></li>
+                    <li><a href="#" class="flex items-center p-2 text-slate-600 rounded-lg hover:bg-slate-100"><svg class="sidebar-icon mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>규격 목록</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- B. 메인 콘텐츠 (분석 대시보드) -->
+        <main class="flex-1 p-6 overflow-y-auto">
+            <!-- B-1. 프로젝트 헤더 -->
+            <header class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 id="project-title" class="text-2xl font-bold text-slate-800"></h2>
+                    <p id="analysis-period" class="text-sm text-slate-600 mt-1"></p>
+                </div>
+                <button id="show-report-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">
+                    품질관리 보고서
+                </button>
+            </header>
+
+            <!-- B-2. 핵심 요약 (KPI 카드) -->
+            <div id="kpi-cards" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                <!-- JS로 동적 생성 -->
+            </div>
+
+            <!-- B-3. 부적합 통계 (시각화 차트) -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="font-bold text-slate-800 mb-4">부적합 항목별 분포</h3>
+                    <div id="donut-chart"></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="font-bold text-slate-800 mb-4">항목별 부적합 제품 현황</h3>
+                    <div id="product-violation-chart"></div>
+                </div>
+            </div>
+
+            <!-- B-4. 부적합 시료 목록 -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-md">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-slate-800">부적합 시료 목록</h3>
+                        <span id="violation-count" class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-semibold"></span>
+                    </div>
+                    <div class="overflow-y-auto max-h-96">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0">
+                                <tr>
+                                    <th class="px-4 py-3">접수번호</th>
+                                    <th class="px-4 py-3">시료명</th>
+                                    <th class="px-4 py-3">항목</th>
+                                    <th class="px-4 py-3">초과결과</th>
+                                    <th class="px-4 py-3">판정</th>
+                                </tr>
+                            </thead>
+                            <tbody id="violation-table-body">
+                                <!-- JS로 동적 생성 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- B-5. 기준값 정보 테이블 -->
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4">시험 기준값 정보</h3>
+                    <div class="overflow-y-auto max-h-96">
+                        <table class="w-full text-sm standards-table">
+                            <thead class="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0">
+                                <tr>
+                                    <th class="px-3 py-2">시험항목</th>
+                                    <th class="px-3 py-2">단위</th>
+                                    <th class="px-3 py-2">기준값</th>
+                                </tr>
+                            </thead>
+                            <tbody id="standards-table-body">
+                                <!-- JS로 동적 생성 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- B-6. 전체 데이터 요약 -->
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <h3 class="text-xl font-bold text-slate-800 mb-4">전체 시료 현황</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                            <tr>
+                                <th class="px-4 py-3">시료명</th>
+                                <th class="px-4 py-3">접수번호</th>
+                                <th class="px-4 py-3">시험항목</th>
+                                <th class="px-4 py-3">결과</th>
+                                <th class="px-4 py-3">기준값</th>
+                                <th class="px-4 py-3">판정</th>
+                            </tr>
+                        </thead>
+                        <tbody id="all-data-table-body">
+                            <!-- JS로 동적 생성 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 시험성적서 미리보기 모달 -->
+    <div id="report-modal" class="fixed inset-0 z-50 items-center justify-center hidden">
+        <div class="modal-backdrop fixed inset-0"></div>
+        <div class="bg-white rounded-lg shadow-xl w-11/12 max-w-4xl h-5/6 relative flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 class="text-lg font-bold">시험성적서 미리보기</h3>
+                <button id="close-report-btn" class="text-slate-500 hover:text-slate-800">&times;</button>
+            </div>
+            <div class="p-4 flex-grow overflow-y-auto">
+                <img src="https://placehold.co/800x1131/F0F0F0/333?text=Sample+Test+Report" alt="시험성적서 샘플" class="w-full h-auto">
+            </div>
+            <div class="p-4 border-t bg-slate-50 text-right space-x-2">
+                 <button class="bg-slate-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-600 transition">인쇄</button>
+                 <button class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition">PDF로 저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 규격 파일 미리보기 바텀 시트 -->
+    <div id="standard-bottom-sheet" class="fixed bottom-0 left-0 right-0 h-4/5 bg-white shadow-2xl z-50 bottom-sheet">
+        <div class="p-4 border-b flex justify-between items-center">
+            <h3 id="standard-title" class="text-lg font-bold"></h3>
+            <button id="close-standard-btn" class="text-slate-500 hover:text-slate-800">&times;</button>
+        </div>
+        <div class="p-4 h-[calc(100%-120px)] overflow-y-auto">
+             <img src="https://placehold.co/800x1131/F0F0F0/333?text=Sample+Standard+Document" alt="규격문서 샘플" class="w-full h-auto">
+        </div>
+        <div class="p-4 border-t bg-slate-50 text-right">
+             <button class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">규격 파일 다운로드</button>
+        </div>
+    </div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // --- 실제 데이터 구조에 맞춘 Mock Data ---
+    const standards = {
+        '1-[4-(1-hydroxy-1-methylethyl)phenyl]-ethanone': { value: 2.0, unit: 'μg/L', criteria: '2.0 μg/L 이하' },
+        'N-니트로조다이메틸아민': { value: 0.1, unit: 'ng/L', criteria: '0.1 ng/L 이하' },
+        'N-니트로조다이에틸아민': { value: 0.1, unit: 'ng/L', criteria: '0.1 ng/L 이하' },
+        '아크릴로나이트릴': { value: 0.0006, unit: 'mg/L', criteria: '0.0006 mg/L 이하' },
+        '트리페닐포스핀옥사이드': { value: 0.5, unit: 'μg/L', criteria: '0.5 μg/L 이하' },
+        '과망간산칼륨소비량': { value: 10, unit: 'mg/L', criteria: '10 mg/L 이하' },
+        '시안': { value: 0.01, unit: 'mg/L', criteria: '0.01 mg/L 이하' },
+        '질산성질소': { value: 10, unit: 'mg/L', criteria: '10 mg/L 이하' }
+    };
+
+    const projects = {
+        'COWAY_품질관리_PJT': {
+            fileName: 'COWAY_품질관리_2025Q1.xlsx',
+            period: '2025.01.01 – 2025.06.30 분석',
+            data: [
+                { id: 1, sampleName: '냉수탱크', analysisNumber: '25A00009-001', testItem: '1-[4-(1-hydroxy-1-methylethyl)phenyl]-ethanone', result: '불검출', numericResult: 0, unit: 'μg/L', status: '적합' },
+                { id: 2, sampleName: '온수탱크', analysisNumber: '25A00009-002', testItem: '1-[4-(1-hydroxy-1-methylethyl)phenyl]-ethanone', result: '불검출', numericResult: 0, unit: 'μg/L', status: '적합' },
+                { id: 3, sampleName: '유량센서', analysisNumber: '25A00009-003', testItem: '1-[4-(1-hydroxy-1-methylethyl)phenyl]-ethanone', result: '불검출', numericResult: 1.4, unit: 'μg/L', status: '적합' },
+                { id: 4, sampleName: 'Blank', analysisNumber: '25A00011-003', testItem: 'N-니트로조다이메틸아민', result: '2.29', numericResult: 2.29, unit: 'ng/L', status: '부적합' },
+                { id: 5, sampleName: '5700용출(1~3일혼합)', analysisNumber: '25A00012-001', testItem: 'N-니트로조다이메틸아민', result: '1.96', numericResult: 1.96, unit: 'ng/L', status: '부적합' },
+                { id: 6, sampleName: 'P09CL용출(1~3일혼합)', analysisNumber: '25A00012-004', testItem: 'N-니트로조다이메틸아민', result: '3.4', numericResult: 3.4, unit: 'ng/L', status: '부적합' },
+                { id: 7, sampleName: '원수', analysisNumber: '25A00012-005', testItem: 'N-니트로조다이메틸아민', result: '3.37', numericResult: 3.37, unit: 'ng/L', status: '부적합' },
+                { id: 8, sampleName: '제품#1 1,2,3일차 혼합', analysisNumber: '25A00089-002', testItem: '아크릴로나이트릴', result: '0.0007', numericResult: 0.0007, unit: 'mg/L', status: '부적합' },
+                { id: 9, sampleName: '제품#2 1,2,3일차 혼합', analysisNumber: '25A00089-003', testItem: '아크릴로나이트릴', result: '0.0004', numericResult: 0.0004, unit: 'mg/L', status: '적합' },
+                { id: 10, sampleName: '1300L#2(1일차온수)', analysisNumber: '25A00123-005', testItem: '아크릴로나이트릴', result: '0.001', numericResult: 0.001, unit: 'mg/L', status: '부적합' },
+                { id: 11, sampleName: '1300L#3(1일차온수)', analysisNumber: '25A00123-007', testItem: '아크릴로나이트릴', result: '0.0007', numericResult: 0.0007, unit: 'mg/L', status: '부적합' },
+                { id: 12, sampleName: '1300L#4(1일차냉수)', analysisNumber: '25A00123-008', testItem: '아크릴로나이트릴', result: '0.0011', numericResult: 0.0011, unit: 'mg/L', status: '부적합' },
+                { id: 13, sampleName: '1300L#4(1일차온수)', analysisNumber: '25A00123-009', testItem: '아크릴로나이트릴', result: '0.0025', numericResult: 0.0025, unit: 'mg/L', status: '부적합' },
+                { id: 14, sampleName: '시안_#3_정수(RO후단)', analysisNumber: '25A00111-003', testItem: '시안', result: '0.52', numericResult: 0.52, unit: 'mg/L', status: '부적합' },
+                { id: 15, sampleName: '시안_#4_정수(RO후단)', analysisNumber: '25A00111-004', testItem: '시안', result: '0.52', numericResult: 0.52, unit: 'mg/L', status: '부적합' },
+                { id: 16, sampleName: '시안_#5_원수(0.5ppm)', analysisNumber: '25A00111-005', testItem: '시안', result: '0.63', numericResult: 0.63, unit: 'mg/L', status: '부적합' },
+                { id: 17, sampleName: '질산성질소_#5_원수(30ppm)', analysisNumber: '25A00112-005', testItem: '질산성질소', result: '35', numericResult: 35, unit: 'mg/L', status: '부적합' },
+                { id: 18, sampleName: '질산성질소_#6_원수(30ppm)', analysisNumber: '25A00112-006', testItem: '질산성질소', result: '34.8', numericResult: 34.8, unit: 'mg/L', status: '부적합' }
+            ]
+        }
+    };
+
+    let currentProject = Object.keys(projects)[0];
+
+    // --- Chart 초기화 ---
+    const commonChartOptions = {
+        chart: {
+            fontFamily: 'Noto Sans KR, sans-serif',
+            toolbar: { show: false },
+        },
+        colors: ['#ef4444', '#f59e0b', '#10b981', '#2563eb', '#8b5cf6', '#ec4899', '#06b6d4'],
+        dataLabels: {
+            style: {
+                fontSize: '12px',
+                fontWeight: 'bold',
+            },
+        },
+        legend: {
+            position: 'bottom',
+            horizontalAlign: 'center',
+            fontSize: '12px',
+            itemMargin: { horizontal: 8 },
+        },
+    };
+
+    const donutChart = new ApexCharts(document.querySelector("#donut-chart"), {
+        ...commonChartOptions,
+        series: [],
+        chart: { ...commonChartOptions.chart, type: 'donut', height: 280 },
+        labels: [],
+        plotOptions: {
+            pie: {
+                donut: {
+                    size: '60%'
+                }
+            }
+        }
+    });
+    donutChart.render();
+
+    const productViolationChart = new ApexCharts(document.querySelector("#product-violation-chart"), {
+        ...commonChartOptions,
+        series: [],
+        chart: { ...commonChartOptions.chart, type: 'bar', height: 280 },
+        plotOptions: {
+            bar: {
+                borderRadius: 4,
+                horizontal: true,
+                distributed: true,
+                barHeight: '70%'
+            }
+        },
+        xaxis: {
+            categories: [],
+            labels: { 
+                style: { fontSize: '11px' },
+                formatter: (val) => `${val}건`
+            }
+        },
+        yaxis: { 
+            labels: { 
+                style: { fontSize: '11px' },
+                maxWidth: 120
+            } 
+        },
+        tooltip: { 
+            y: { formatter: (val) => `${val}건` } 
+        },
+        legend: { show: false }
+    });
+    productViolationChart.render();
+
+    // --- 핵심 함수들 ---
+    function getProjectName(fileName) {
+        return fileName.replace('.xlsx', '').replace('.xls', '') + '_PJT';
+    }
+
+    function getAnalysisPeriod(data) {
+        // 실제로는 데이터에서 날짜 범위를 추출해야 함
+        return '2025.01.01 – 2025.06.30 분석';
+    }
+
+    function getUniqueSamples(data) {
+        const uniqueSamples = new Set();
+        data.forEach(item => {
+            uniqueSamples.add(item.sampleName);
+        });
+        return uniqueSamples.size;
+    }
+
+    function getViolationsByTestItem(data) {
+        const violations = data.filter(item => item.status === '부적합');
+        const byItem = {};
+        violations.forEach(item => {
+            byItem[item.testItem] = (byItem[item.testItem] || 0) + 1;
+        });
+        return byItem;
+    }
+
+    function getViolationsBySample(data) {
+        const violations = data.filter(item => item.status === '부적합');
+        const bySample = {};
+        violations.forEach(item => {
+            const key = `${item.sampleName}`;
+            bySample[key] = (bySample[key] || 0) + 1;
+        });
+        return bySample;
+    }
+
+    function renderDashboard(projectKey) {
+        currentProject = projectKey;
+        const project = projects[projectKey];
+        const data = project.data;
+
+        // B-1. 프로젝트 헤더 업데이트
+        document.getElementById('project-title').textContent = projectKey;
+        document.getElementById('analysis-period').textContent = project.period;
+
+        // B-2. KPI 카드 업데이트
+        const totalSamples = getUniqueSamples(data);
+        const totalTests = data.length;
+        const violationTests = data.filter(d => d.status === '부적합').length;
+        const violationRate = totalTests > 0 ? ((violationTests / totalTests) * 100).toFixed(1) : 0;
+        const uniqueViolationSamples = new Set(data.filter(d => d.status === '부적합').map(d => d.sampleName)).size;
+
+        const kpiContainer = document.getElementById('kpi-cards');
+        kpiContainer.innerHTML = `
+            <div class="bg-white p-4 rounded-xl shadow-md">
+                <p class="text-sm text-slate-500">총 시료 개수</p>
+                <p class="text-2xl font-bold text-blue-600">${totalSamples}개</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-md">
+                <p class="text-sm text-slate-500">부적합 시료</p>
+                <p class="text-2xl font-bold text-red-500">${uniqueViolationSamples}개</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-md">
+                <p class="text-sm text-slate-500">부적합 비율</p>
+                <p class="text-2xl font-bold text-orange-500">${violationRate}%</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-md">
+                <p class="text-sm text-slate-500">총 시험 건수</p>
+                <p class="text-2xl font-bold text-slate-700">${totalTests}건</p>
+            </div>
+        `;
+
+        // B-3. 차트 업데이트
+        const violationsByItem = getViolationsByTestItem(data);
+        
+        donutChart.updateOptions({
+            series: Object.values(violationsByItem),
+            labels: Object.keys(violationsByItem).map(item => item.length > 15 ? item.substring(0, 15) + '...' : item)
+        });
+
+        const violationsBySample = getViolationsBySample(data);
+        const sortedSamples = Object.entries(violationsBySample)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 10); // 상위 10개만
+
+        productViolationChart.updateOptions({
+            series: [{ name: '부적합 건수', data: sortedSamples.map(([,count]) => count) }],
+            xaxis: { 
+                categories: sortedSamples.map(([sample,]) => 
+                    sample.length > 20 ? sample.substring(0, 20) + '...' : sample
+                )
+            }
+        });
+
+        // B-4. 부적합 시료 목록
+        renderViolationTable(data);
+
+        // B-5. 기준값 정보 테이블
+        renderStandardsTable();
+
+        // B-6. 전체 데이터 테이블
+        renderAllDataTable(data);
+
+        // 사이드바 파일 목록 업데이트
+        renderFileList();
+    }
+
+    function renderViolationTable(data) {
+        const violations = data.filter(item => item.status === '부적합');
+        
+        document.getElementById('violation-count').textContent = `${violations.length}건`;
+        
+        const tableBody = document.getElementById('violation-table-body');
+        tableBody.innerHTML = '';
+        
+        violations.forEach(item => {
+            const row = document.createElement('tr');
+            row.className = 'border-b hover:bg-red-50 violation-highlight';
+            row.innerHTML = `
+                <td class="px-4 py-3 text-xs font-mono">${item.analysisNumber}</td>
+                <td class="px-4 py-3 font-medium text-sm">${item.sampleName}</td>
+                <td class="px-4 py-3 text-sm">${item.testItem.length > 20 ? item.testItem.substring(0, 20) + '...' : item.testItem}</td>
+                <td class="px-4 py-3 font-bold text-red-600">${item.result} ${item.unit}</td>
+                <td class="px-4 py-3">
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                        부적합
+                    </span>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    function renderStandardsTable() {
+        const tableBody = document.getElementById('standards-table-body');
+        tableBody.innerHTML = '';
+        
+        Object.entries(standards).forEach(([testItem, info]) => {
+            const row = document.createElement('tr');
+            row.className = 'border-b hover:bg-slate-50';
+            row.innerHTML = `
+                <td class="px-3 py-2 text-xs">${testItem.length > 25 ? testItem.substring(0, 25) + '...' : testItem}</td>
+                <td class="px-3 py-2 text-xs font-mono">${info.unit}</td>
+                <td class="px-3 py-2 text-xs font-semibold text-blue-600">≤ ${info.value}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    function renderAllDataTable(data) {
+        const tableBody = document.getElementById('all-data-table-body');
+        tableBody.innerHTML = '';
+        
+        data.forEach(item => {
+            const row = document.createElement('tr');
+            row.className = `border-b hover:bg-slate-50 ${item.status === '부적합' ? 'bg-red-50' : ''}`;
+            const standardInfo = standards[item.testItem];
+            const standardValue = standardInfo ? `≤ ${standardInfo.value} ${standardInfo.unit}` : '-';
+            
+            row.innerHTML = `
+                <td class="px-4 py-3 font-medium text-sm">${item.sampleName}</td>
+                <td class="px-4 py-3 text-xs font-mono">${item.analysisNumber}</td>
+                <td class="px-4 py-3 text-sm">${item.testItem.length > 30 ? item.testItem.substring(0, 30) + '...' : item.testItem}</td>
+                <td class="px-4 py-3 font-bold ${item.status === '부적합' ? 'text-red-600' : 'text-slate-700'}">${item.result} ${item.unit}</td>
+                <td class="px-4 py-3 text-xs text-blue-600">${standardValue}</td>
+                <td class="px-4 py-3">
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full ${item.status === '부적합' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">
+                        ${item.status}
+                    </span>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    function renderFileList() {
+        const fileListContainer = document.getElementById('file-list');
+        fileListContainer.innerHTML = '';
+        
+        Object.entries(projects).forEach(([projectKey, project]) => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <a href="#" class="block p-2 rounded-lg text-sm ${projectKey === currentProject ? 'bg-blue-100 text-blue-700 font-bold' : 'text-slate-600 hover:bg-slate-100'}">
+                    ${project.fileName}
+                </a>
+            `;
+            li.addEventListener('click', (e) => {
+                e.preventDefault();
+                renderDashboard(projectKey);
+            });
+            fileListContainer.appendChild(li);
+        });
+    }
+
+    // --- 모달 및 바텀 시트 로직 ---
+    const reportModal = document.getElementById('report-modal');
+    const standardSheet = document.getElementById('standard-bottom-sheet');
+    const backdrop = document.querySelector('.modal-backdrop');
+
+    document.getElementById('show-report-btn').addEventListener('click', () => {
+        reportModal.classList.remove('hidden');
+        reportModal.classList.add('flex');
+    });
+    
+    document.getElementById('close-report-btn').addEventListener('click', () => {
+        reportModal.classList.add('hidden');
+        reportModal.classList.remove('flex');
+    });
+
+    function showStandardSheet(docName) {
+        document.getElementById('standard-title').textContent = `${docName} 미리보기`;
+        standardSheet.classList.add('show');
+    }
+    
+    function closeStandardSheet() {
+        standardSheet.classList.remove('show');
+    }
+
+    document.getElementById('close-standard-btn').addEventListener('click', closeStandardSheet);
+    
+    backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) {
+            reportModal.classList.add('hidden');
+            reportModal.classList.remove('flex');
+            closeStandardSheet();
+        }
+    });
+
+    // --- 초기 로드 ---
+    renderDashboard(currentProject);
+});
+</script>
+
+</body>
+</html>

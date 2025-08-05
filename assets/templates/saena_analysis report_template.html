@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>시험 분석 보고서 대시보드 (Interactive)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        .sidebar-icon { width: 20px; height: 20px; }
+        .bottom-sheet {
+            transition: transform 0.3s ease-in-out;
+            transform: translateY(100%);
+        }
+        .bottom-sheet.show {
+            transform: translateY(0);
+        }
+        .modal-backdrop {
+            background-color: rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body class="bg-slate-100">
+
+    <div class="flex h-screen">
+        <!-- A. 사이드바 (탐색 패널) -->
+        <aside class="w-64 bg-white shadow-lg flex flex-col">
+            <div class="p-4 border-b">
+                <h1 class="text-xl font-bold text-slate-800">분석 시스템</h1>
+            </div>
+            <div class="p-4 border-b">
+                <h2 class="text-xs font-bold text-slate-500 uppercase mb-2">현재 조회 파일</h2>
+                <ul class="space-y-2" id="file-list">
+                    <!-- JS로 동적 생성 -->
+                </ul>
+            </div>
+            <nav class="flex-1 p-4">
+                <h2 class="text-xs font-bold text-slate-500 uppercase mb-2">메뉴</h2>
+                <ul class="space-y-2">
+                    <li><a href="#" class="flex items-center p-2 text-slate-600 rounded-lg hover:bg-slate-100"><svg class="sidebar-icon mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>처리 대기 파일</a></li>
+                    <li><a href="#" class="flex items-center p-2 text-slate-600 rounded-lg hover:bg-slate-100"><svg class="sidebar-icon mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>시험성적서 목록</a></li>
+                    <li><a href="#" class="flex items-center p-2 text-slate-600 rounded-lg hover:bg-slate-100"><svg class="sidebar-icon mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>규격 목록</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- B. 메인 콘텐츠 (분석 대시보드) -->
+        <main class="flex-1 p-6 overflow-y-auto">
+            <!-- B-1. 동적 헤더 -->
+            <header class="flex justify-between items-center mb-6">
+                <h2 id="dashboard-title" class="text-2xl font-bold text-slate-800"></h2>
+                <button id="show-report-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">
+                    시험성적서 미리보기
+                </button>
+            </header>
+
+            <!-- B-2. 핵심 요약 (KPI 카드) -->
+            <div id="kpi-cards" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <!-- JS로 동적 생성 -->
+            </div>
+
+            <!-- B-3. 부적합 통계 (시각화 차트) -->
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="font-bold text-slate-800">부적합 항목 분포</h3>
+                    <div id="donut-chart"></div>
+                </div>
+                <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="font-bold text-slate-800">부적합 항목별 비율</h3>
+                    <div id="bar-chart"></div>
+                </div>
+            </div>
+
+            <!-- B-4 & B-5. 데이터 목록 및 상세 정보 -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-md h-[500px] flex flex-col">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4">데이터 목록</h3>
+                    <div class="flex-grow overflow-y-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0">
+                                <tr>
+                                    <th class="px-6 py-3">시료명</th>
+                                    <th class="px-6 py-3">시험항목</th>
+                                    <th class="px-6 py-3">결과</th>
+                                    <th class="px-6 py-3">판정</th>
+                                </tr>
+                            </thead>
+                            <tbody id="data-table-body">
+                                <!-- JS로 동적 생성 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="details-panel" class="bg-white p-6 rounded-xl shadow-md h-[500px]">
+                    <!-- JS로 동적 생성 -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 시험성적서 미리보기 모달 -->
+    <div id="report-modal" class="fixed inset-0 z-50 items-center justify-center hidden">
+        <div class="modal-backdrop fixed inset-0"></div>
+        <div class="bg-white rounded-lg shadow-xl w-11/12 max-w-4xl h-5/6 relative flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 class="text-lg font-bold">시험성적서 미리보기</h3>
+                <button id="close-report-btn" class="text-slate-500 hover:text-slate-800">&times;</button>
+            </div>
+            <div class="p-4 flex-grow overflow-y-auto">
+                <img src="https://placehold.co/800x1131/F0F0F0/333?text=Sample+Test+Report" alt="시험성적서 샘플" class="w-full h-auto">
+            </div>
+            <div class="p-4 border-t bg-slate-50 text-right space-x-2">
+                 <button class="bg-slate-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-600 transition">인쇄</button>
+                 <button class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition">PDF로 저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 규격 파일 미리보기 바텀 시트 -->
+    <div id="standard-bottom-sheet" class="fixed bottom-0 left-0 right-0 h-4/5 bg-white shadow-2xl z-50 bottom-sheet">
+        <div class="p-4 border-b flex justify-between items-center">
+            <h3 id="standard-title" class="text-lg font-bold"></h3>
+            <button id="close-standard-btn" class="text-slate-500 hover:text-slate-800">&times;</button>
+        </div>
+        <div class="p-4 h-[calc(100%-120px)] overflow-y-auto">
+             <img src="https://placehold.co/800x1131/F0F0F0/333?text=Sample+Standard+Document" alt="규격문서 샘플" class="w-full h-auto">
+        </div>
+        <div class="p-4 border-t bg-slate-50 text-right">
+             <button class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">규격 파일 다운로드</button>
+        </div>
+    </div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // --- Mock Data ---
+    const standards = {
+      '포름알데히드': { value: 0.1, unit: 'mg/L', doc: 'STD-001.pdf' },
+      'N-니트로소디에틸아민': { value: 2.0, unit: 'ng/L', doc: 'STD-002.pdf' },
+      '아크릴로나이트릴': { value: 0.0006, unit: 'mg/L', doc: 'STD-003.pdf' },
+    };
+
+    const files = {
+        'Test_Results_2025-07-18.xlsx': [
+            { id: 1, sampleName: '정수기 모델 A-1', testItem: 'N-니트로소디에틸아민', result: 2.5 },
+            { id: 2, sampleName: '정수기 모델 B-2', testItem: '포름알데히드', result: 0.08 },
+            { id: 3, sampleName: '필터 C-X', testItem: '아크릴로나이트릴', result: 0.0007 },
+            { id: 4, sampleName: '정수기 모델 A-1', testItem: '포름알데히드', result: 0.09 },
+        ],
+        'Water_Quality_Check_Q3.xlsx': [
+            { id: 5, sampleName: '저수조 D-5', testItem: 'N-니트로소디에틸아민', result: 1.8 },
+            { id: 6, sampleName: '필터 C-Y', testItem: '아크릴로나이트릴', result: 0.0005 },
+        ]
+    };
+
+    let currentFile = Object.keys(files)[0];
+    let selectedSample = null;
+
+    // --- Chart Options ---
+    const commonChartOptions = {
+        chart: {
+            fontFamily: 'Noto Sans KR, sans-serif',
+            toolbar: { show: false },
+        },
+        colors: ['#2563eb', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6'],
+        dataLabels: {
+            style: {
+                fontSize: '14px',
+                fontWeight: 'bold',
+            },
+        },
+        legend: {
+            position: 'bottom',
+            horizontalAlign: 'center',
+            fontSize: '14px',
+            itemMargin: { horizontal: 10 },
+        },
+    };
+
+    const donutChart = new ApexCharts(document.querySelector("#donut-chart"), {
+        ...commonChartOptions,
+        series: [],
+        chart: { ...commonChartOptions.chart, type: 'donut', height: 300 },
+        labels: [],
+        responsive: [{
+            breakpoint: 480,
+            options: {
+                chart: { width: 200 },
+                legend: { position: 'bottom' }
+            }
+        }]
+    });
+    donutChart.render();
+
+    const barChart = new ApexCharts(document.querySelector("#bar-chart"), {
+        ...commonChartOptions,
+        series: [{ name: '부적합비율', data: [] }],
+        chart: { ...commonChartOptions.chart, type: 'bar', height: 300 },
+        plotOptions: {
+            bar: {
+                borderRadius: 4,
+                horizontal: true,
+                distributed: true, // each bar has a different color
+            }
+        },
+        xaxis: {
+            categories: [],
+            labels: { formatter: (val) => `${val.toFixed(1)}%` }
+        },
+        yaxis: { labels: { style: { fontSize: '14px' } } },
+        tooltip: { y: { formatter: (val) => `${val.toFixed(1)}%` } },
+        legend: { show: false }
+    });
+    barChart.render();
+
+    // --- Core Functions ---
+    function processData(fileData) {
+        return fileData.map(item => {
+            const standardInfo = standards[item.testItem];
+            const isNonConforming = standardInfo ? item.result > standardInfo.value : false;
+            return {
+                ...item,
+                standardInfo,
+                status: isNonConforming ? '부적합' : '적합',
+            };
+        });
+    }
+
+    function renderDashboard(fileName) {
+        currentFile = fileName;
+        const fileData = files[fileName];
+        const processed = processData(fileData);
+        selectedSample = processed[0];
+
+        // B-1. Update Title
+        document.getElementById('dashboard-title').textContent = `${fileName} 분석 보고서 대시보드`;
+
+        // B-2. Update KPIs
+        const totalTests = processed.length;
+        const nonConformingTests = processed.filter(d => d.status === '부적합').length;
+        const nonConformingRate = totalTests > 0 ? ((nonConformingTests / totalTests) * 100).toFixed(1) : 0;
+        
+        const kpiContainer = document.getElementById('kpi-cards');
+        kpiContainer.innerHTML = `
+            <div class="bg-white p-4 rounded-xl shadow-md"><p class="text-sm text-slate-500">총 시험 항목</p><p class="text-2xl font-bold">${totalTests}</p></div>
+            <div class="bg-white p-4 rounded-xl shadow-md"><p class="text-sm text-slate-500">부적합 항목</p><p class="text-2xl font-bold text-red-500">${nonConformingTests}</p></div>
+            <div class="bg-white p-4 rounded-xl shadow-md"><p class="text-sm text-slate-500">부적합 비율</p><p class="text-2xl font-bold">${nonConformingRate}%</p></div>
+        `;
+
+        // B-3. Update Charts
+        const nonConformingByItem = processed.filter(d => d.status === '부적합').reduce((acc, item) => {
+            acc[item.testItem] = (acc[item.testItem] || 0) + 1;
+            return acc;
+        }, {});
+        
+        donutChart.updateOptions({
+            series: Object.values(nonConformingByItem),
+            labels: Object.keys(nonConformingByItem)
+        });
+
+        const rateByItem = Object.keys(standards).map(name => {
+            const total = processed.filter(d => d.testItem === name).length;
+            const nonConforming = processed.filter(d => d.testItem === name && d.status === '부적합').length;
+            return { name, rate: total > 0 ? (nonConforming / total * 100) : 0 };
+        });
+
+        barChart.updateOptions({
+            series: [{ data: rateByItem.map(d => d.rate) }],
+            xaxis: { categories: rateByItem.map(d => d.name) }
+        });
+
+        renderTableAndDetails(processed);
+        renderFileList();
+    }
+
+    function renderTableAndDetails(processedData) {
+        // B-4. Render Table
+        const tableBody = document.getElementById('data-table-body');
+        tableBody.innerHTML = '';
+        processedData.forEach(item => {
+            const row = document.createElement('tr');
+            row.className = `border-b hover:bg-slate-50 cursor-pointer ${item.id === selectedSample.id ? 'bg-blue-50' : ''}`;
+            row.innerHTML = `
+                <td class="px-6 py-4 font-medium">${item.sampleName}</td>
+                <td class="px-6 py-4">${item.testItem}</td>
+                <td class="px-6 py-4 font-bold ${item.status === '부적합' ? 'text-red-500' : ''}">${item.result}</td>
+                <td class="px-6 py-4">
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full ${item.status === '부적합' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">
+                        ${item.status}
+                    </span>
+                </td>
+            `;
+            row.addEventListener('click', () => {
+                selectedSample = item;
+                renderTableAndDetails(processedData);
+            });
+            tableBody.appendChild(row);
+        });
+
+        // B-5. Render Details Panel
+        const detailsPanel = document.getElementById('details-panel');
+        if (selectedSample) {
+            detailsPanel.innerHTML = `
+                <h3 class="text-xl font-bold text-slate-800 mb-4">상세 정보</h3>
+                <div class="space-y-4">
+                    <div class="bg-slate-50 p-4 rounded-lg">
+                        <h4 class="font-semibold text-slate-700 mb-2">시료 정보</h4>
+                        <p class="text-sm"><span class="font-medium text-slate-600 w-20 inline-block">시료명:</span> ${selectedSample.sampleName}</p>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-lg">
+                        <h4 class="font-semibold text-slate-700 mb-2">시험 규격 정보</h4>
+                        <p class="text-sm"><span class="font-medium text-slate-600 w-20 inline-block">시험 항목:</span> ${selectedSample.testItem}</p>
+                        <p class="text-sm"><span class="font-medium text-slate-600 w-20 inline-block">기준값:</span> ≤ ${selectedSample.standardInfo.value} ${selectedSample.standardInfo.unit}</p>
+                        <p class="text-sm mt-2">
+                            <span class="font-medium text-slate-600 w-20 inline-block">관련 규격:</span> 
+                            <a href="#" class="text-blue-600 hover:underline" data-doc="${selectedSample.standardInfo.doc}" id="show-standard-link">
+                                ${selectedSample.standardInfo.doc}
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            `;
+            document.getElementById('show-standard-link').addEventListener('click', (e) => {
+                e.preventDefault();
+                const docName = e.target.dataset.doc;
+                showStandardSheet(docName);
+            });
+        } else {
+            detailsPanel.innerHTML = `<div class="flex items-center justify-center h-full text-slate-500">테이블에서 항목을 선택하세요.</div>`;
+        }
+    }
+
+    function renderFileList() {
+        const fileListContainer = document.getElementById('file-list');
+        fileListContainer.innerHTML = '';
+        Object.keys(files).forEach(fileName => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <a href="#" class="block p-2 rounded-lg ${fileName === currentFile ? 'bg-blue-100 text-blue-700 font-bold' : 'text-slate-600 hover:bg-slate-100'}">
+                    ${fileName}
+                </a>
+            `;
+            li.addEventListener('click', (e) => {
+                e.preventDefault();
+                renderDashboard(fileName);
+            });
+            fileListContainer.appendChild(li);
+        });
+    }
+
+    // --- Modal & Bottom Sheet Logic ---
+    const reportModal = document.getElementById('report-modal');
+    const standardSheet = document.getElementById('standard-bottom-sheet');
+    const backdrop = document.querySelector('.modal-backdrop');
+
+    document.getElementById('show-report-btn').addEventListener('click', () => {
+        reportModal.classList.remove('hidden');
+        reportModal.classList.add('flex');
+    });
+    document.getElementById('close-report-btn').addEventListener('click', () => {
+        reportModal.classList.add('hidden');
+        reportModal.classList.remove('flex');
+    });
+    
+    function showStandardSheet(docName) {
+        document.getElementById('standard-title').textContent = `${docName} 미리보기`;
+        standardSheet.classList.add('show');
+        backdrop.classList.remove('hidden');
+        backdrop.classList.add('fixed');
+    }
+    
+    function closeStandardSheet() {
+        standardSheet.classList.remove('show');
+        backdrop.classList.add('hidden');
+        backdrop.classList.remove('fixed');
+    }
+
+    document.getElementById('close-standard-btn').addEventListener('click', closeStandardSheet);
+    backdrop.addEventListener('click', () => {
+        document.getElementById('close-report-btn').click();
+        closeStandardSheet();
+    });
+
+    // --- Initial Load ---
+    renderDashboard(currentFile);
+});
+</script>
+
+</body>
+</html>
