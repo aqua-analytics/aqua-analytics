@@ -1,70 +1,72 @@
 # 🧪 Aqua-Analytics Premium
-## 환경 데이터 인사이트 플랫폼
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://aqua-analytics-demo.streamlit.app)
+> 실험실 품질관리를 위한 현대적인 웹 기반 대시보드 시스템
 
-### 🌟 주요 기능
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://your-app-url.streamlit.app)
 
-- **📊 실시간 데이터 분석**: 수질, 대기질, 토양 데이터 통합 분석
-- **📈 인터랙티브 대시보드**: 동적 차트와 시각화
-- **🔍 통합 분석 엔진**: AI 기반 데이터 인사이트
-- **📋 자동 보고서 생성**: PDF/Excel 형태의 전문 보고서
-- **🎯 기준치 모니터링**: 환경 기준 초과 알림
+## ⚠️ 중요 안내 - 데모 버전
 
-### 🚀 빠른 시작
+**이 클라우드 버전은 데모/체험용입니다:**
+- 📝 업로드된 파일은 세션 종료 시 자동 삭제됩니다
+- 💾 데이터베이스 변경사항이 영구 저장되지 않습니다
+- 👥 모든 사용자가 동일한 임시 저장소를 공유합니다
 
-#### 온라인 데모 (GitHub 버전)
-👆 위의 Streamlit 배지를 클릭하여 바로 체험해보세요!
+**실제 업무용으로는 로컬 설치 버전을 권장합니다.**
 
-#### 로컬 설치 (Windows)
-```bash
-# 1. 저장소 클론
-git clone https://github.com/aqua-analytics/aqua-analytics.git
-cd aqua-analytics
+## ✨ 주요 기능
 
-# 2. 자동 설치 및 실행 (관리자 권한 필요)
-install_and_run.bat
-```
+### 🎯 핵심 기능
+- 📊 **실시간 데이터 분석**: 27개 컬럼 엑셀 파일 완벽 파싱 및 즉시 분석
+- 📈 **인터랙티브 대시보드**: 동적 차트와 KPI 카드
+- 🔍 **고급 데이터 테이블**: 정렬, 검색, 필터링 기능
+- ⚠️ **부적합 항목 추적**: 자동 감지 및 시각적 강조 표시
+- 📋 **통합 분석**: 기간별 데이터 통합 분석 및 시각화
+- 📄 **자동 보고서 생성**: HTML 형태의 품질관리 보고서
+- 🛡️ **시험 규격 관리**: PDF 규격 문서 업로드 및 관리
 
-### 📋 시스템 요구사항
+## 🚀 사용 방법
 
-- **OS**: Windows 10/11, macOS, Linux
-- **Python**: 3.8 이상 (자동 설치 지원)
-- **메모리**: 최소 4GB RAM
-- **저장공간**: 1GB 이상
+### 1. 파일 업로드
+- 사이드바에서 엑셀 파일을 업로드하세요
+- 지원 형식: `.xlsx`, `.xls` (최대 200MB)
+- 27개 컬럼 구조 자동 인식
 
-### 🏢 사내 네트워크 배포
+### 2. 데이터 분석
+- 프로젝트 정보 자동 추출
+- 부적합 항목 자동 감지 및 분류
+- 실시간 KPI 계산 및 표시
 
-로컬 서버로 사내 네트워크에서 사용하려면:
+### 3. 통합 분석
+- 기간별 데이터 통합 분석
+- 부적합 항목 분포 차트
+- 실험별 오염수준 분포
+- 시험/시료별 추이 분석
 
-1. `setup_local_server.bat` 실행
-2. 방화벽 포트 8501 열기
-3. `http://서버IP:8501`로 접속
+### 4. 보고서 생성
+- HTML 형태의 품질관리 보고서 자동 생성
+- 그래프 포함 완전한 리포트 다운로드
+- 부적합 항목 하이라이트 및 개선 권고사항
 
-자세한 내용은 [LOCAL_SERVER_SETUP.md](docs/LOCAL_SERVER_SETUP.md)를 참조하세요.
+## 📊 지원 데이터 형식
 
-### 📊 지원 데이터 형식
+### 필수 컬럼 (27개)
+- 시료명, 분석번호, 시험항목, 시험단위
+- 결과(성적서), 시험자입력값
+- 기준대비 초과여부, 시험자, 시험표준
+- 기준 텍스트, 결과유형 등
 
-- **Excel**: `.xlsx`, `.xls`
-- **CSV**: `.csv`
-- **JSON**: `.json`
-
-### 🔧 기술 스택
+## 🛠️ 기술 스택
 
 - **Frontend**: Streamlit
-- **Backend**: Python, Pandas
-- **Visualization**: Plotly, Matplotlib
-- **Database**: JSON (로컬), SQLite (확장 가능)
+- **Data Processing**: Pandas, NumPy
+- **Visualization**: Plotly
+- **File Processing**: OpenPyXL
+- **Database**: JSON-based local storage
 
-### 📞 지원
+## 📞 지원
 
-- **이메일**: iot.ideashare@gmail.com
-- **GitHub Issues**: [문제 신고](https://github.com/aqua-analytics/aqua-analytics/issues)
-
-### 📄 라이선스
-
-MIT License - 자유롭게 사용, 수정, 배포 가능
+문제가 발생하거나 기능 개선 요청이 있으시면 연락주세요.
 
 ---
 
-**🌊 깨끗한 환경을 위한 데이터 인사이트**
+© 2024 Aqua-Analytics | 환경 데이터 인사이트 플랫폼

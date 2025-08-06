@@ -11,34 +11,87 @@ echo ██                                                            ██
 echo ████████████████████████████████████████████████████████████████
 echo.
 
-:: 관리자 권한 확인
-net session >nul 2>&1
-if %errorLevel% neq 0 (
-    echo ⚠️  관리자 권한이 필요합니다. 관리자로 다시 실행해주세요.
+:: 현재 디렉토리 확인
+echo 📁 현재 작업 디렉토리: %CD%
+echo.
+
+:: 필수 파일 존재 확인
+if not exist "aqua_analytics_premium.py" (
+    echo ❌ 오류: aqua_analytics_premium.py 파일이 없습니다.
     echo.
-    echo 방법: 우클릭 → "관리자 권한으로 실행"
+    echo 해결 방법:
+    echo 1. GitHub에서 전체 프로젝트를 다운로드했는지 확인
+    echo 2. ZIP 파일을 완전히 압축 해제했는지 확인
+    echo 3. 올바른 폴더에서 실행하고 있는지 확인
     echo.
     pause
     exit /b 1
+)
+
+if not exist "requirements.txt" (
+    echo ❌ 오류: requirements.txt 파일이 없습니다.
+    echo.
+    echo 해결 방법:
+    echo 1. GitHub에서 전체 프로젝트를 다운로드했는지 확인
+    echo 2. ZIP 파일을 완전히 압축 해제했는지 확인
+    echo.
+    pause
+    exit /b 1
+)
+
+echo ✅ 필수 파일 확인 완료
+echo.
+
+:: 관리자 권한 확인 (선택적)
+net session >nul 2>&1
+if %errorLevel% neq 0 (
+    echo ⚠️  관리자 권한이 없습니다.
+    echo.
+    echo 권장사항: 관리자 권한으로 실행하면 더 안정적입니다.
+    echo 방법: 우클릭 → "관리자 권한으로 실행"
+    echo.
+    echo 계속 진행하시겠습니까? (Y/N)
+    set /p continue=
+    if /i "!continue!" neq "Y" (
+        echo 설치를 취소합니다.
+        pause
+        exit /b 1
+    )
+    echo.
 )
 
 echo ✅ 관리자 권한 확인 완료
 echo.
 
 :: Python 설치 확인
-echo [1/6] Python 설치 상태 확인 중...
+echo [1/7] Python 설치 상태 확인 중...
 python --version >nul 2>&1
 if %errorLevel% equ 0 (
     for /f "tokens=2" %%i in ('python --version 2^>^&1') do set PYTHON_VERSION=%%i
     echo ✅ Python !PYTHON_VERSION! 이미 설치됨
-    goto :install_packages
+    goto :check_pip
 )
 
 echo ❌ Python이 설치되지 않았습니다.
 echo.
 
+:: PowerShell 사용 가능 확인
+powershell -Command "Write-Host 'PowerShell 테스트'" >nul 2>&1
+if %errorLevel% neq 0 (
+    echo ❌ PowerShell을 사용할 수 없습니다.
+    echo.
+    echo 수동 설치 방법:
+    echo 1. https://python.org 접속
+    echo 2. Python 3.11.7 다운로드
+    echo 3. 설치 시 "Add Python to PATH" 체크
+    echo 4. 설치 완료 후 이 스크립트 다시 실행
+    echo.
+    pause
+    exit /b 1
+)
+
 :: Python 다운로드 및 설치
-echo [2/6] Python 3.11.7 다운로드 중...
+echo [2/7] Python 3.11.7 다운로드 중...
 set PYTHON_URL=https://www.python.org/ftp/python/3.11.7/python-3.11.7-amd64.exe
 set PYTHON_INSTALLER=python-installer.exe
 
