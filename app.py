@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Aqua-Analytics Premium: 환경 데이터 인사이트 플랫폼 - GitHub 데모 버전
-로컬 버전과 동일한 UI/UX, 세션 기반 임시 저장
+로컬 버전과 완전히 동일한 UI/UX 및 기능
 """
 
 import streamlit as st
@@ -23,15 +23,31 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# 테스트 결과 클래스 (로컬 버전과 동일)
+class TestResult:
+    def __init__(self, data_row):
+        self.sample_name = data_row.get('시료명', '')
+        self.analysis_number = data_row.get('분석번호', '')
+        self.test_item = data_row.get('시험항목', '')
+        self.test_unit = data_row.get('시험단위', '')
+        self.result_value = data_row.get('결과(성적서)', '')
+        self.input_value = data_row.get('시험자입력값', '')
+        self.conformity = data_row.get('기준대비 초과여부', '')
+        self.tester = data_row.get('시험자', '')
+        self.test_standard = data_row.get('시험표준', '')
+        
+    def is_non_conforming(self):
+        return self.conformity == '부적합'
+
 class AquaAnalyticsDemo:
-    """Aqua-Analytics Premium 데모 애플리케이션"""
+    """Aqua-Analytics Premium 데모 애플리케이션 (로컬 버전 완전 복제)"""
     
     def __init__(self):
         self.apply_premium_theme()
         self.initialize_session_state()
     
     def apply_premium_theme(self):
-        """프리미엄 테마 CSS 적용 (로컬 버전과 동일)"""
+        """프리미엄 테마 CSS 적용 (로컬 버전과 완전 동일)"""
         st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -121,6 +137,92 @@ class AquaAnalyticsDemo:
             padding: 0 0.5rem;
         }
         
+        /* KPI 카드 스타일 */
+        .kpi-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            height: 160px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+        
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+            border-color: #cbd5e1;
+        }
+        
+        .kpi-card:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .kpi-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+        
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+        
+        .kpi-label {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+            font-weight: 500;
+        }
+        
+        /* 페이지 헤더 */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        
+        .page-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin: 0;
+        }
+        
+        .page-subtitle {
+            font-size: 1rem;
+            color: var(--gray-600);
+            margin: 0.25rem 0 0 0;
+        }
+        
         /* 버튼 스타일 */
         .stButton > button {
             width: 100%;
@@ -141,69 +243,38 @@ class AquaAnalyticsDemo:
         }
         
         /* 파일 업로더 스타일 */
-        .stFileUploader {
-            background: var(--gray-50);
+        .upload-area {
+            background: white;
             border: 2px dashed var(--gray-300);
-            border-radius: 0.5rem;
-            padding: 1.5rem;
+            border-radius: 16px;
+            padding: 3rem 2rem;
             text-align: center;
-            margin: 1rem 0;
+            margin: 2rem 0;
+            transition: all 0.3s ease;
         }
         
-        /* 메트릭 카드 */
-        .metric-card {
-            background: white;
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--gray-200);
+        .upload-area:hover {
+            border-color: var(--primary-500);
+            background: var(--primary-50);
+        }
+        
+        .upload-icon {
+            font-size: 4rem;
+            color: var(--gray-400);
             margin-bottom: 1rem;
         }
         
-        /* 데모 배너 */
-        .demo-banner {
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-            border: 1px solid #f59e0b;
-            border-radius: 0.75rem;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-            color: #92400e;
-        }
-        
-        /* 차트 컨테이너 */
-        .chart-container {
-            background: white;
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--gray-200);
-            margin-bottom: 1.5rem;
-        }
-        
-        /* 데이터프레임 스타일 */
-        .dataframe {
-            border-radius: 0.5rem;
-            overflow: hidden;
-            box-shadow: var(--shadow-sm);
-        }
-        
-        /* 페이지 헤더 */
-        .page-header {
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--gray-200);
-        }
-        
-        .page-title {
-            font-size: 1.875rem;
-            font-weight: 700;
+        .upload-title {
+            font-size: 1.5rem;
+            font-weight: 600;
             color: var(--gray-900);
             margin-bottom: 0.5rem;
         }
         
-        .page-subtitle {
+        .upload-subtitle {
             font-size: 1rem;
             color: var(--gray-600);
+            margin-bottom: 2rem;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -214,17 +285,13 @@ class AquaAnalyticsDemo:
             st.session_state.current_page = 'dashboard'
         if 'active_file' not in st.session_state:
             st.session_state.active_file = None
-        if 'uploaded_data' not in st.session_state:
-            st.session_state.uploaded_data = None
-        if 'processed_data' not in st.session_state:
-            st.session_state.processed_data = None
-        if 'analysis_results' not in st.session_state:
-            st.session_state.analysis_results = {}
+        if 'uploaded_files' not in st.session_state:
+            st.session_state.uploaded_files = {}
         if 'demo_data_loaded' not in st.session_state:
             st.session_state.demo_data_loaded = False
     
     def render_sidebar(self):
-        """프리미엄 사이드바 렌더링 (로컬 버전과 동일한 구조)"""
+        """프리미엄 사이드바 렌더링 (로컬 버전과 완전 동일)"""
         with st.sidebar:
             # 브랜드 헤더
             st.markdown("""
@@ -253,15 +320,6 @@ class AquaAnalyticsDemo:
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
-            
-            # 데모 알림
-            st.markdown("""
-            <div class="demo-banner">
-                <strong>🌐 GitHub 데모 버전</strong><br>
-                데이터는 세션 종료 시 삭제됩니다.<br>
-                실제 업무용은 로컬 서버 버전을 설치하세요.
-            </div>
-            """, unsafe_allow_html=True)
             
             # 네비게이션 메뉴
             st.markdown('<div class="nav-section-title">MENU</div>', unsafe_allow_html=True)
@@ -306,26 +364,32 @@ class AquaAnalyticsDemo:
             
             # 저장 폴더 바로가기 섹션
             st.markdown("---")
-            st.markdown('<div class="nav-section-title">저장 폴더 (데모)</div>', unsafe_allow_html=True)
+            st.markdown('<div class="nav-section-title">저장 폴더</div>', unsafe_allow_html=True)
             
-            folder_info = [
-                {'label': '업로드 파일', 'icon': '📤', 'count': len(st.session_state.get('uploaded_files', []))},
-                {'label': '처리된 파일', 'icon': '⚙️', 'count': 1 if st.session_state.processed_data is not None else 0},
-                {'label': '보고서', 'icon': '📄', 'count': 1 if st.session_state.active_file else 0}
+            # 폴더별 바로가기 버튼 (실시간 정보 포함)
+            folder_buttons = [
+                {'key': 'base', 'label': '전체 폴더', 'icon': '📁'},
+                {'key': 'uploads', 'label': '업로드 파일', 'icon': '📤'},
+                {'key': 'processed', 'label': '처리된 파일', 'icon': '⚙️'},
+                {'key': 'dashboard_reports', 'label': '보고서', 'icon': '📄'}
             ]
             
-            for folder in folder_info:
-                st.markdown(f"""
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: var(--gray-50); border-radius: 0.5rem; margin-bottom: 0.5rem;">
-                    <span>{folder['icon']} {folder['label']}</span>
-                    <span style="background: var(--primary-100); color: var(--primary-700); padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
-                        {folder['count']}개
-                    </span>
-                </div>
-                """, unsafe_allow_html=True)
+            # 실시간 폴더 정보 표시
+            for folder in folder_buttons:
+                file_count = len(st.session_state.uploaded_files) if folder['key'] == 'uploads' else 0
+                if folder['key'] == 'processed' and st.session_state.active_file:
+                    file_count = 1
+                if folder['key'] == 'dashboard_reports' and st.session_state.active_file:
+                    file_count = 1
+                
+                count_text = f"({file_count}개)"
+                
+                if st.button(f"{folder['icon']} {folder['label']} {count_text}", 
+                           key=f"folder_{folder['key']}", use_container_width=True):
+                    st.info(f"📁 {folder['label']} 폴더 - 데모 버전에서는 실제 폴더 열기가 제한됩니다.")
     
     def process_uploaded_file(self, uploaded_file):
-        """업로드된 파일 처리"""
+        """업로드된 파일 처리 (로컬 버전과 동일한 로직)"""
         try:
             # 파일 형식에 따른 읽기
             if uploaded_file.name.endswith('.csv'):
@@ -333,22 +397,28 @@ class AquaAnalyticsDemo:
             elif uploaded_file.name.endswith(('.xlsx', '.xls')):
                 df = pd.read_excel(uploaded_file)
             
-            # 세션에 저장
-            st.session_state.uploaded_data = df
-            st.session_state.processed_data = df
-            st.session_state.active_file = uploaded_file.name
+            # 테스트 결과 객체 생성
+            test_results = []
+            for _, row in df.iterrows():
+                test_results.append(TestResult(row.to_dict()))
             
-            # 기본 분석 수행
-            self.perform_basic_analysis(df)
+            # 세션에 저장 (로컬 버전과 동일한 구조)
+            st.session_state.uploaded_files[uploaded_file.name] = {
+                'test_results': test_results,
+                'raw_data': df,
+                'upload_time': datetime.now()
+            }
+            st.session_state.active_file = uploaded_file.name
             
             st.success(f"✅ 파일 업로드 성공: {uploaded_file.name}")
             st.info(f"📊 데이터 크기: {len(df):,}행 × {len(df.columns)}열")
+            st.rerun()
             
         except Exception as e:
             st.error(f"❌ 파일 처리 오류: {str(e)}")
     
     def load_sample_data(self):
-        """샘플 데이터 로드"""
+        """샘플 데이터 로드 (로컬 버전과 동일한 구조)"""
         # 샘플 환경 데이터 생성
         sample_data = pd.DataFrame({
             '시료명': [f'시료_{i:03d}' for i in range(1, 101)],
@@ -363,316 +433,526 @@ class AquaAnalyticsDemo:
             '분석일자': pd.date_range('2024-01-01', periods=100, freq='D')
         })
         
-        st.session_state.uploaded_data = sample_data
-        st.session_state.processed_data = sample_data
-        st.session_state.active_file = "샘플_환경데이터.xlsx"
+        # 테스트 결과 객체 생성
+        test_results = []
+        for _, row in sample_data.iterrows():
+            test_results.append(TestResult(row.to_dict()))
+        
+        # 세션에 저장
+        filename = "샘플_환경데이터.xlsx"
+        st.session_state.uploaded_files[filename] = {
+            'test_results': test_results,
+            'raw_data': sample_data,
+            'upload_time': datetime.now()
+        }
+        st.session_state.active_file = filename
         st.session_state.demo_data_loaded = True
         
-        self.perform_basic_analysis(sample_data)
         st.success("✅ 샘플 데이터가 로드되었습니다!")
         st.rerun()
     
-    def perform_basic_analysis(self, df):
-        """기본 분석 수행"""
-        analysis = {
-            'total_rows': len(df),
-            'total_columns': len(df.columns),
-            'missing_values': df.isnull().sum().sum(),
-            'duplicate_rows': df.duplicated().sum(),
-            'numeric_columns': df.select_dtypes(include=['number']).columns.tolist(),
-            'categorical_columns': df.select_dtypes(include=['object']).columns.tolist(),
-            'data_types': df.dtypes.to_dict()
-        }
+    def render_page_header(self, title, subtitle, show_save_button=False):
+        """페이지 헤더 렌더링 (로컬 버전과 동일)"""
+        col1, col2 = st.columns([3, 1])
         
-        # 부적합 항목 분석 (환경 데이터 특화)
-        if '기준대비 초과여부' in df.columns:
-            analysis['non_conforming_count'] = len(df[df['기준대비 초과여부'] == '부적합'])
-            analysis['conforming_rate'] = (len(df) - analysis['non_conforming_count']) / len(df) * 100
+        with col1:
+            st.markdown(f"""
+            <div class="page-header">
+                <div>
+                    <div class="page-title">{title}</div>
+                    <div class="page-subtitle">{subtitle}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
         
-        st.session_state.analysis_results = analysis
+        with col2:
+            if show_save_button:
+                if st.button("💾 저장", key="save_button"):
+                    st.success("✅ 데모 버전 - 저장 완료 (세션 기반)")
     
-    def render_dashboard_page(self):
-        """대시보드 페이지 렌더링"""
+    def render_kpi_cards(self, test_results: List[TestResult]):
+        """프리미엄 KPI 카드 렌더링 (로컬 버전과 완전 동일)"""
+        if not test_results:
+            return
+        
+        # KPI 데이터 계산
+        total_tests = len(test_results)
+        violations = [r for r in test_results if r.is_non_conforming()]
+        violation_rate = len(violations) / total_tests * 100 if total_tests > 0 else 0
+        unique_samples = len(set(r.sample_name for r in test_results))
+        
+        # 부적합 시료 개수 (중복 제거)
+        violation_samples = len(set(v.sample_name for v in violations))
+        
+        # 주요 부적합 항목
+        violation_by_item = {}
+        for v in violations:
+            violation_by_item[v.test_item] = violation_by_item.get(v.test_item, 0) + 1
+        
+        top_item = "해당 없음"
+        if violation_by_item:
+            top_item = max(violation_by_item.items(), key=lambda x: x[1])[0]
+            if len(top_item) > 20:
+                top_item = top_item[:17] + "..."
+        
+        # 4개 컬럼으로 KPI 카드 배치
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #dbeafe; color: #2563eb;">
+                    📊
+                </div>
+                <div>
+                    <div class="kpi-value" style="color: #2563eb;">{total_tests:,}</div>
+                    <div class="kpi-label">총 시험 건수</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #fef2f2; color: #ef4444;">
+                    ⚠️
+                </div>
+                <div>
+                    <div class="kpi-value" style="color: #ef4444;">{len(violations):,}</div>
+                    <div class="kpi-label">부적합 건수</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col3:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #f0fdf4; color: #22c55e;">
+                    📈
+                </div>
+                <div>
+                    <div class="kpi-value" style="color: #22c55e;">{100-violation_rate:.1f}%</div>
+                    <div class="kpi-label">적합률</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col4:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: #fef3c7; color: #f59e0b;">
+                    🧪
+                </div>
+                <div>
+                    <div class="kpi-value" style="color: #f59e0b;">{unique_samples:,}</div>
+                    <div class="kpi-label">시료 수</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    def render_upload_page(self):
+        """프리미엄 업로드 페이지 (로컬 버전과 동일)"""
+        self.render_page_header("데이터 업로드", "Excel 파일을 업로드하여 환경 데이터 분석을 시작하세요")
+        
+        # 업로드 영역
         st.markdown("""
-        <div class="page-header">
-            <div class="page-title">📊 대시보드</div>
-            <div class="page-subtitle">환경 데이터 실시간 모니터링 및 분석</div>
+        <div class="upload-area">
+            <div class="upload-icon">📁</div>
+            <div class="upload-title">파일을 업로드하세요</div>
+            <div class="upload-subtitle">Excel (.xlsx, .xls) 또는 CSV 파일을 지원합니다</div>
         </div>
         """, unsafe_allow_html=True)
         
-        if st.session_state.processed_data is not None:
-            df = st.session_state.processed_data
+        # 샘플 데이터 로드 버튼
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if st.button("📊 샘플 데이터로 시작하기", use_container_width=True, type="primary"):
+                self.load_sample_data()
+        
+        # 지원 형식 안내
+        st.markdown("""
+        ### 📋 지원 파일 형식
+        - **Excel 파일**: `.xlsx`, `.xls`
+        - **CSV 파일**: `.csv`
+        - **최대 파일 크기**: 200MB
+        
+        ### 📊 필수 컬럼 구조
+        환경 데이터 분석을 위해 다음 컬럼들이 포함되어야 합니다:
+        - 시료명, 분석번호, 시험항목, 시험단위
+        - 결과(성적서), 시험자입력값
+        - 기준대비 초과여부, 시험자, 시험표준
+        """)
+    
+    def render_dashboard_page(self):
+        """프리미엄 대시보드 페이지 (로컬 버전과 완전 동일)"""
+        # 파일 확인
+        if not st.session_state.active_file:
+            self.render_upload_page()
+            return
+        
+        file_data = st.session_state.uploaded_files[st.session_state.active_file]
+        test_results = file_data['test_results']
+        project_name = st.session_state.active_file.replace('.xlsx', '').replace('.xls', '')
+        
+        # 페이지 헤더 (저장 버튼 포함)
+        self.render_page_header("분석 대시보드", f"프로젝트: {project_name}", show_save_button=True)
+        
+        # KPI 카드
+        self.render_kpi_cards(test_results)
+        
+        # 메인 콘텐츠 영역
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            # 차트 영역을 좌우로 분할
+            chart_col1, chart_col2 = st.columns(2)
             
-            # KPI 카드
-            col1, col2, col3, col4 = st.columns(4)
+            with chart_col1:
+                st.markdown("#### 📊 부적합 항목 분포")
+                try:
+                    violations = [r for r in test_results if r.is_non_conforming()]
+                    if violations:
+                        # 부적합 항목별 분포
+                        violation_by_item = {}
+                        for v in violations:
+                            violation_by_item[v.test_item] = violation_by_item.get(v.test_item, 0) + 1
+                        
+                        # 도넛 차트 생성
+                        fig = go.Figure(data=[go.Pie(
+                            labels=list(violation_by_item.keys()),
+                            values=list(violation_by_item.values()),
+                            hole=0.4,
+                            marker_colors=['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e']
+                        )])
+                        
+                        fig.update_layout(
+                            title="",
+                            height=400,
+                            margin=dict(l=20, r=20, t=20, b=20),
+                            showlegend=True
+                        )
+                        
+                        st.plotly_chart(fig, use_container_width=True, key="premium_donut")
+                    else:
+                        st.info("부적합 항목이 없습니다.")
+                except Exception as e:
+                    st.error(f"도넛 차트 오류: {e}")
             
-            with col1:
-                st.markdown("""
-                <div class="metric-card">
-                    <div style="font-size: 0.875rem; color: var(--gray-600); margin-bottom: 0.5rem;">총 데이터 수</div>
-                    <div style="font-size: 2rem; font-weight: 700; color: var(--gray-900);">{:,}</div>
+            with chart_col2:
+                st.markdown("#### 📈 부적합 시료별 건수")
+                try:
+                    violations = [r for r in test_results if r.is_non_conforming()]
+                    
+                    if violations:
+                        # 시료별 부적합 건수 계산
+                        violation_by_sample = {}
+                        for v in violations:
+                            sample = v.sample_name
+                            violation_by_sample[sample] = violation_by_sample.get(sample, 0) + 1
+                        
+                        # 상위 10개 시료만 표시
+                        sorted_samples = sorted(violation_by_sample.items(), key=lambda x: x[1], reverse=True)[:10]
+                        
+                        if sorted_samples:
+                            # 전체 부적합 건수 대비 비율 계산
+                            total_violations = len(violations)
+                            
+                            samples = [item[0] for item in sorted_samples]
+                            counts = [item[1] for item in sorted_samples]
+                            percentages = [(count/total_violations)*100 for count in counts]
+                            
+                            # 개선된 막대 차트 생성
+                            fig = go.Figure()
+                            
+                            # 막대 차트에 건수와 비율 표시
+                            hover_text = [f"{sample}<br>{count}건 ({percent:.1f}%)" 
+                                        for sample, count, percent in zip(samples, counts, percentages)]
+                            
+                            fig.add_trace(go.Bar(
+                                y=samples,
+                                x=counts,
+                                orientation='h',
+                                text=[f"{count}건 ({percent:.1f}%)" for count, percent in zip(counts, percentages)],
+                                textposition='auto',
+                                hovertext=hover_text,
+                                hoverinfo='text',
+                                marker=dict(
+                                    color='#ef4444',
+                                    opacity=0.8
+                                )
+                            ))
+                            
+                            fig.update_layout(
+                                title="",
+                                xaxis_title="부적합 건수",
+                                yaxis_title="",
+                                height=400,
+                                margin=dict(l=20, r=20, t=20, b=20),
+                                yaxis=dict(autorange="reversed"),
+                                showlegend=False
+                            )
+                            
+                            st.plotly_chart(fig, use_container_width=True, key="premium_bar")
+                        else:
+                            st.info("부적합 시료가 없습니다.")
+                    else:
+                        st.info("부적합 항목이 없습니다.")
+                        
+                except Exception as e:
+                    st.error(f"막대 차트 오류: {e}")
+        
+        with col2:
+            # 우측 패널 - 상세 정보
+            st.markdown("#### 📋 프로젝트 정보")
+            
+            # 프로젝트 정보 카드
+            st.markdown(f"""
+            <div style="background: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; border: 1px solid #e2e8f0;">
+                <div style="font-size: 0.875rem; color: #64748b; margin-bottom: 0.5rem;">프로젝트명</div>
+                <div style="font-size: 1rem; font-weight: 600; color: #1e293b; margin-bottom: 1rem;">{project_name}</div>
+                
+                <div style="font-size: 0.875rem; color: #64748b; margin-bottom: 0.5rem;">업로드 시간</div>
+                <div style="font-size: 0.875rem; color: #1e293b; margin-bottom: 1rem;">{file_data['upload_time'].strftime('%Y-%m-%d %H:%M:%S')}</div>
+                
+                <div style="font-size: 0.875rem; color: #64748b; margin-bottom: 0.5rem;">데이터 상태</div>
+                <div style="color: #22c55e; font-weight: 500;">✅ 분석 완료</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # 빠른 통계
+            st.markdown("#### 📊 빠른 통계")
+            
+            violations = [r for r in test_results if r.is_non_conforming()]
+            unique_items = len(set(r.test_item for r in test_results))
+            unique_testers = len(set(r.tester for r in test_results))
+            
+            st.markdown(f"""
+            <div style="background: white; border-radius: 12px; padding: 1.5rem; border: 1px solid #e2e8f0;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                    <span style="color: #64748b;">시험 항목 수</span>
+                    <span style="font-weight: 600;">{unique_items}개</span>
                 </div>
-                """.format(len(df)), unsafe_allow_html=True)
-            
-            with col2:
-                st.markdown("""
-                <div class="metric-card">
-                    <div style="font-size: 0.875rem; color: var(--gray-600); margin-bottom: 0.5rem;">분석 항목</div>
-                    <div style="font-size: 2rem; font-weight: 700; color: var(--primary-600);">{}</div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                    <span style="color: #64748b;">시험자 수</span>
+                    <span style="font-weight: 600;">{unique_testers}명</span>
                 </div>
-                """.format(len(df.columns)), unsafe_allow_html=True)
-            
-            with col3:
-                non_conforming = st.session_state.analysis_results.get('non_conforming_count', 0)
-                st.markdown("""
-                <div class="metric-card">
-                    <div style="font-size: 0.875rem; color: var(--gray-600); margin-bottom: 0.5rem;">부적합 항목</div>
-                    <div style="font-size: 2rem; font-weight: 700; color: var(--error);">{}</div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                    <span style="color: #64748b;">부적합률</span>
+                    <span style="font-weight: 600; color: #ef4444;">{len(violations)/len(test_results)*100:.1f}%</span>
                 </div>
-                """.format(non_conforming), unsafe_allow_html=True)
-            
-            with col4:
-                conforming_rate = st.session_state.analysis_results.get('conforming_rate', 100)
-                st.markdown("""
-                <div class="metric-card">
-                    <div style="font-size: 0.875rem; color: var(--gray-600); margin-bottom: 0.5rem;">적합률</div>
-                    <div style="font-size: 2rem; font-weight: 700; color: var(--success);">{:.1f}%</div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: #64748b;">적합률</span>
+                    <span style="font-weight: 600; color: #22c55e;">{(1-len(violations)/len(test_results))*100:.1f}%</span>
                 </div>
-                """.format(conforming_rate), unsafe_allow_html=True)
-            
-            # 차트 섹션
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.markdown('<div class="chart-container">', unsafe_allow_html=True)
-                if '시험항목' in df.columns and '결과(성적서)' in df.columns:
-                    fig = px.box(df, x='시험항목', y='결과(성적서)', 
-                                title="시험항목별 결과 분포")
-                    fig.update_layout(height=400)
-                    st.plotly_chart(fig, use_container_width=True)
-                st.markdown('</div>', unsafe_allow_html=True)
-            
-            with col2:
-                st.markdown('<div class="chart-container">', unsafe_allow_html=True)
-                if '기준대비 초과여부' in df.columns:
-                    conformity_counts = df['기준대비 초과여부'].value_counts()
-                    fig = px.pie(values=conformity_counts.values, names=conformity_counts.index,
-                               title="적합성 분포")
-                    fig.update_layout(height=400)
-                    st.plotly_chart(fig, use_container_width=True)
-                st.markdown('</div>', unsafe_allow_html=True)
-            
-            # 데이터 테이블
-            st.markdown('<div class="chart-container">', unsafe_allow_html=True)
-            st.subheader("📋 데이터 테이블")
-            st.dataframe(df.head(20), use_container_width=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-        else:
-            st.info("👈 사이드바에서 파일을 업로드하거나 샘플 데이터를 로드해주세요.")
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # 하단 데이터 테이블
+        st.markdown("---")
+        st.markdown("#### 📋 상세 데이터")
+        
+        # 데이터프레임 표시
+        df = file_data['raw_data']
+        st.dataframe(df, use_container_width=True, height=400)
     
     def render_integrated_analysis_page(self):
         """통합 분석 페이지 렌더링"""
-        st.markdown("""
-        <div class="page-header">
-            <div class="page-title">📈 통합 분석</div>
-            <div class="page-subtitle">AI 기반 환경 데이터 통합 분석 및 인사이트</div>
-        </div>
-        """, unsafe_allow_html=True)
+        self.render_page_header("통합 분석", "AI 기반 환경 데이터 통합 분석 및 인사이트")
         
-        if st.session_state.processed_data is not None:
-            df = st.session_state.processed_data
-            
-            # 분석 옵션
-            col1, col2 = st.columns(2)
-            with col1:
-                analysis_type = st.selectbox(
-                    "분석 유형 선택",
-                    ["전체 분석", "시험항목별 분석", "시간별 분석", "적합성 분석"]
-                )
-            with col2:
-                chart_type = st.selectbox(
-                    "차트 유형",
-                    ["라인 차트", "바 차트", "히트맵", "산점도"]
-                )
-            
-            # 분석 결과
-            if analysis_type == "전체 분석":
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    st.markdown('<div class="chart-container">', unsafe_allow_html=True)
-                    if '분석일자' in df.columns and '결과(성적서)' in df.columns:
-                        fig = px.line(df, x='분석일자', y='결과(성적서)', 
-                                     color='시험항목' if '시험항목' in df.columns else None,
-                                     title="시간별 측정값 추이")
-                        st.plotly_chart(fig, use_container_width=True)
-                    st.markdown('</div>', unsafe_allow_html=True)
-                
-                with col2:
-                    st.markdown('<div class="chart-container">', unsafe_allow_html=True)
-                    numeric_cols = df.select_dtypes(include=['number']).columns
-                    if len(numeric_cols) > 1:
-                        corr_matrix = df[numeric_cols].corr()
-                        fig = px.imshow(corr_matrix, title="변수 간 상관관계")
-                        st.plotly_chart(fig, use_container_width=True)
-                    st.markdown('</div>', unsafe_allow_html=True)
-            
-            # AI 인사이트
-            st.markdown('<div class="chart-container">', unsafe_allow_html=True)
-            st.subheader("🤖 AI 인사이트")
-            
-            insights = [
-                "📈 최근 7일간 pH 수치가 안정적인 범위를 유지하고 있습니다.",
-                "⚠️ COD 수치에서 일부 기준 초과 사례가 발견되었습니다.",
-                "🔍 용존산소 농도가 계절적 패턴을 보이고 있습니다.",
-                "💡 전체적인 수질 상태는 양호한 수준입니다.",
-                "📊 지속적인 모니터링을 통한 품질 관리가 권장됩니다."
-            ]
-            
-            for i, insight in enumerate(insights):
-                st.info(f"{insight}")
-            
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-        else:
+        if not st.session_state.active_file:
             st.info("👈 먼저 데이터를 업로드해주세요.")
+            return
+        
+        file_data = st.session_state.uploaded_files[st.session_state.active_file]
+        test_results = file_data['test_results']
+        df = file_data['raw_data']
+        
+        # 분석 옵션
+        col1, col2 = st.columns(2)
+        with col1:
+            analysis_type = st.selectbox(
+                "분석 유형 선택",
+                ["전체 분석", "시험항목별 분석", "시간별 분석", "적합성 분석"]
+            )
+        with col2:
+            chart_type = st.selectbox(
+                "차트 유형",
+                ["라인 차트", "바 차트", "히트맵", "산점도"]
+            )
+        
+        # 분석 결과 차트
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("#### 📈 시험항목별 결과 분포")
+            if '시험항목' in df.columns and '결과(성적서)' in df.columns:
+                fig = px.box(df, x='시험항목', y='결과(성적서)', 
+                           title="시험항목별 측정값 분포")
+                fig.update_layout(height=400)
+                st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            st.markdown("#### 🔍 적합성 분석")
+            if '기준대비 초과여부' in df.columns:
+                conformity_counts = df['기준대비 초과여부'].value_counts()
+                fig = px.pie(values=conformity_counts.values, names=conformity_counts.index,
+                           title="전체 적합성 분포")
+                fig.update_layout(height=400)
+                st.plotly_chart(fig, use_container_width=True)
+        
+        # AI 인사이트
+        st.markdown("---")
+        st.markdown("#### 🤖 AI 인사이트")
+        
+        violations = [r for r in test_results if r.is_non_conforming()]
+        violation_rate = len(violations) / len(test_results) * 100
+        
+        insights = [
+            f"📊 전체 {len(test_results)}건의 시험 중 {len(violations)}건이 부적합으로 판정되었습니다.",
+            f"📈 부적합률은 {violation_rate:.1f}%로 {'주의가 필요한' if violation_rate > 10 else '양호한'} 수준입니다.",
+            "🔍 주요 부적합 항목에 대한 원인 분석이 권장됩니다.",
+            "💡 지속적인 모니터링을 통한 품질 개선이 필요합니다.",
+            "📋 정기적인 시험 규격 검토를 통한 기준 최적화를 고려해보세요."
+        ]
+        
+        for insight in insights:
+            st.info(insight)
     
     def render_reports_management_page(self):
         """보고서 관리 페이지 렌더링"""
-        st.markdown("""
-        <div class="page-header">
-            <div class="page-title">📄 보고서 관리</div>
-            <div class="page-subtitle">분석 보고서 생성 및 관리</div>
-        </div>
-        """, unsafe_allow_html=True)
+        self.render_page_header("보고서 관리", "분석 보고서 생성 및 관리")
         
-        if st.session_state.processed_data is not None:
-            df = st.session_state.processed_data
-            
-            # 보고서 생성 옵션
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                report_type = st.selectbox(
-                    "보고서 유형",
-                    ["종합 분석 보고서", "품질 관리 보고서", "부적합 항목 보고서", "통계 요약 보고서"]
-                )
-            
-            with col2:
-                export_format = st.selectbox(
-                    "내보내기 형식",
-                    ["HTML", "PDF", "Excel", "Word"]
-                )
-            
-            if st.button("📋 보고서 생성", use_container_width=True):
-                # 보고서 내용 생성
-                report_content = self.generate_report(df, report_type)
-                
-                st.markdown('<div class="chart-container">', unsafe_allow_html=True)
-                st.markdown(report_content, unsafe_allow_html=True)
-                st.markdown('</div>', unsafe_allow_html=True)
-                
-                # 다운로드 버튼
-                st.download_button(
-                    label=f"📄 {report_type} 다운로드",
-                    data=report_content,
-                    file_name=f"aqua_analytics_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
-                    mime="text/html"
-                )
-        else:
+        if not st.session_state.active_file:
             st.info("👈 먼저 데이터를 업로드해주세요.")
+            return
+        
+        file_data = st.session_state.uploaded_files[st.session_state.active_file]
+        test_results = file_data['test_results']
+        df = file_data['raw_data']
+        
+        # 보고서 생성 옵션
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            report_type = st.selectbox(
+                "보고서 유형",
+                ["종합 분석 보고서", "품질 관리 보고서", "부적합 항목 보고서", "통계 요약 보고서"]
+            )
+        
+        with col2:
+            export_format = st.selectbox(
+                "내보내기 형식",
+                ["HTML", "PDF", "Excel", "Word"]
+            )
+        
+        if st.button("📋 보고서 생성", use_container_width=True, type="primary"):
+            # 보고서 내용 생성
+            violations = [r for r in test_results if r.is_non_conforming()]
+            violation_rate = len(violations) / len(test_results) * 100
+            
+            report_content = f"""
+            <div style="font-family: 'Inter', sans-serif; max-width: 800px; margin: 0 auto;">
+                <h1 style="color: #2563eb; border-bottom: 2px solid #dbeafe; padding-bottom: 1rem;">
+                    🧪 {report_type}
+                </h1>
+                
+                <div style="background: #f8fafc; padding: 1.5rem; border-radius: 0.75rem; margin: 1.5rem 0;">
+                    <h3 style="color: #1e293b; margin-bottom: 1rem;">📋 프로젝트 개요</h3>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr><td style="padding: 0.5rem; border-bottom: 1px solid #e2e8f0;"><strong>프로젝트명:</strong></td><td style="padding: 0.5rem; border-bottom: 1px solid #e2e8f0;">{st.session_state.active_file}</td></tr>
+                        <tr><td style="padding: 0.5rem; border-bottom: 1px solid #e2e8f0;"><strong>생성 일시:</strong></td><td style="padding: 0.5rem; border-bottom: 1px solid #e2e8f0;">{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</td></tr>
+                        <tr><td style="padding: 0.5rem; border-bottom: 1px solid #e2e8f0;"><strong>총 시험 건수:</strong></td><td style="padding: 0.5rem; border-bottom: 1px solid #e2e8f0;">{len(test_results):,}건</td></tr>
+                        <tr><td style="padding: 0.5rem;"><strong>부적합 건수:</strong></td><td style="padding: 0.5rem; color: #ef4444; font-weight: 600;">{len(violations)}건 ({violation_rate:.1f}%)</td></tr>
+                    </table>
+                </div>
+                
+                <div style="background: white; padding: 1.5rem; border-radius: 0.75rem; margin: 1.5rem 0; border: 1px solid #e2e8f0;">
+                    <h3 style="color: #1e293b; margin-bottom: 1rem;">📊 주요 지표</h3>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                        <div style="text-align: center; padding: 1rem; background: #f0fdf4; border-radius: 0.5rem;">
+                            <div style="font-size: 2rem; font-weight: 700; color: #22c55e;">{100-violation_rate:.1f}%</div>
+                            <div style="color: #166534;">적합률</div>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; background: #fef2f2; border-radius: 0.5rem;">
+                            <div style="font-size: 2rem; font-weight: 700; color: #ef4444;">{violation_rate:.1f}%</div>
+                            <div style="color: #991b1b;">부적합률</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="background: white; padding: 1.5rem; border-radius: 0.75rem; margin: 1.5rem 0; border: 1px solid #e2e8f0;">
+                    <h3 style="color: #1e293b; margin-bottom: 1rem;">💡 분석 결과 및 권장사항</h3>
+                    <ul style="line-height: 1.6;">
+                        <li>전체 시험 결과의 품질 수준은 {'우수' if violation_rate < 5 else '보통' if violation_rate < 15 else '개선 필요'}합니다.</li>
+                        <li>부적합 항목에 대한 원인 분석 및 개선 조치가 필요합니다.</li>
+                        <li>정기적인 품질 모니터링을 통한 지속적 개선을 권장합니다.</li>
+                        <li>시험 규격 및 절차의 정기적 검토가 필요합니다.</li>
+                    </ul>
+                </div>
+                
+                <div style="text-align: center; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e2e8f0; color: #64748b;">
+                    <p><em>Aqua-Analytics Premium에서 생성된 보고서입니다.</em></p>
+                </div>
+            </div>
+            """
+            
+            st.markdown(report_content, unsafe_allow_html=True)
+            
+            # 다운로드 버튼
+            st.download_button(
+                label=f"📄 {report_type} 다운로드 ({export_format})",
+                data=report_content,
+                file_name=f"aqua_analytics_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
+                mime="text/html"
+            )
     
     def render_standards_management_page(self):
         """시험 규격 관리 페이지 렌더링"""
-        st.markdown("""
-        <div class="page-header">
-            <div class="page-title">🛡️ 시험 규격 관리</div>
-            <div class="page-subtitle">환경 시험 규격 및 기준 관리</div>
-        </div>
-        """, unsafe_allow_html=True)
+        self.render_page_header("시험 규격 관리", "환경 시험 규격 및 기준 관리")
         
-        # 데모용 규격 정보
+        # 현재 적용 규격
+        st.markdown("#### 📋 현재 적용 규격")
+        
         standards_data = {
-            "pH": {"기준값": "6.5-8.5", "단위": "pH", "규격": "KS M 0011"},
-            "용존산소": {"기준값": "≥5.0", "단위": "mg/L", "규격": "KS M 0012"},
-            "탁도": {"기준값": "≤4.0", "단위": "NTU", "규격": "KS M 0013"},
-            "COD": {"기준값": "≤8.0", "단위": "mg/L", "규격": "KS M 0014"},
-            "BOD": {"기준값": "≤3.0", "단위": "mg/L", "규격": "KS M 0015"}
+            "시험항목": ["pH", "용존산소", "탁도", "COD", "BOD", "총질소", "총인"],
+            "기준값": ["6.5-8.5", "≥5.0", "≤4.0", "≤8.0", "≤3.0", "≤0.5", "≤0.02"],
+            "단위": ["pH", "mg/L", "NTU", "mg/L", "mg/L", "mg/L", "mg/L"],
+            "시험표준": ["KS M 0011", "KS M 0012", "KS M 0013", "KS M 0014", "KS M 0015", "KS M 0016", "KS M 0017"],
+            "상태": ["✅ 적용중", "✅ 적용중", "✅ 적용중", "⚠️ 검토필요", "✅ 적용중", "✅ 적용중", "✅ 적용중"]
         }
         
-        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
-        st.subheader("📋 현재 적용 규격")
+        standards_df = pd.DataFrame(standards_data)
+        st.dataframe(standards_df, use_container_width=True, height=300)
         
-        standards_df = pd.DataFrame(standards_data).T
-        standards_df.index.name = "시험항목"
-        st.dataframe(standards_df, use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        # 규격 관리 기능
+        col1, col2 = st.columns(2)
         
-        # 규격 파일 업로드 (데모)
-        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
-        st.subheader("📤 규격 문서 업로드")
-        
-        uploaded_standard = st.file_uploader(
-            "PDF 규격 문서 업로드",
-            type=['pdf'],
-            help="시험 규격 PDF 문서를 업로드하세요"
-        )
-        
-        if uploaded_standard:
-            st.success(f"✅ 규격 문서 업로드 완료: {uploaded_standard.name}")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    def generate_report(self, df, report_type):
-        """보고서 생성"""
-        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
-        report_html = f"""
-        <div style="font-family: 'Inter', sans-serif; max-width: 800px;">
-            <h1 style="color: var(--primary-600); border-bottom: 2px solid var(--primary-200); padding-bottom: 1rem;">
-                🧪 {report_type}
-            </h1>
+        with col1:
+            st.markdown("#### 📤 규격 문서 업로드")
+            uploaded_standard = st.file_uploader(
+                "PDF 규격 문서 업로드",
+                type=['pdf'],
+                help="시험 규격 PDF 문서를 업로드하세요"
+            )
             
-            <div style="background: var(--gray-50); padding: 1rem; border-radius: 0.5rem; margin: 1rem 0;">
-                <h3>📋 기본 정보</h3>
-                <ul>
-                    <li><strong>생성 일시:</strong> {current_time}</li>
-                    <li><strong>데이터 파일:</strong> {st.session_state.active_file or '샘플 데이터'}</li>
-                    <li><strong>총 데이터 수:</strong> {len(df):,}개</li>
-                    <li><strong>분석 항목 수:</strong> {len(df.columns)}개</li>
-                </ul>
-            </div>
+            if uploaded_standard:
+                st.success(f"✅ 규격 문서 업로드 완료: {uploaded_standard.name}")
+        
+        with col2:
+            st.markdown("#### ⚙️ 규격 설정")
             
-            <div style="background: white; padding: 1rem; border-radius: 0.5rem; margin: 1rem 0; border: 1px solid var(--gray-200);">
-                <h3>📊 데이터 요약</h3>
-                <p>업로드된 데이터에 대한 기본 통계 분석 결과입니다.</p>
+            # 새 규격 추가 폼
+            with st.form("add_standard"):
+                new_item = st.text_input("시험항목")
+                new_standard = st.text_input("기준값")
+                new_unit = st.text_input("단위")
+                new_method = st.text_input("시험표준")
                 
-                <h4>🔍 품질 지표</h4>
-                <ul>
-                    <li><strong>결측값:</strong> {df.isnull().sum().sum()}개</li>
-                    <li><strong>중복값:</strong> {df.duplicated().sum()}개</li>
-                    <li><strong>데이터 완성도:</strong> {((len(df) * len(df.columns) - df.isnull().sum().sum()) / (len(df) * len(df.columns)) * 100):.1f}%</li>
-                </ul>
-                
-                <h4>💡 주요 인사이트</h4>
-                <ul>
-                    <li>전체적인 데이터 품질이 양호합니다</li>
-                    <li>추가 분석을 통한 심화 인사이트 도출이 가능합니다</li>
-                    <li>정기적인 모니터링을 통한 품질 관리가 권장됩니다</li>
-                </ul>
-            </div>
-            
-            <div style="text-align: center; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--gray-200); color: var(--gray-500);">
-                <p><em>Aqua-Analytics Premium에서 생성된 보고서입니다.</em></p>
-            </div>
-        </div>
-        """
-        
-        return report_html
+                if st.form_submit_button("➕ 규격 추가"):
+                    st.success("✅ 새 규격이 추가되었습니다 (데모 버전)")
     
     def run(self):
-        """애플리케이션 실행 (로컬 버전과 동일한 구조)"""
+        """애플리케이션 실행 (로컬 버전과 완전 동일한 구조)"""
         self.render_sidebar()
         
         if st.session_state.current_page == 'dashboard':
