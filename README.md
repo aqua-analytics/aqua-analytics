@@ -1,7 +1,7 @@
 # 🧪 Aqua-Analytics Premium
 ## 환경 데이터 인사이트 플랫폼
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://aqua-analytics-demo.streamlit.app)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://aqua-analytics.streamlit.app)
 
 ### 🌟 주요 기능
 
