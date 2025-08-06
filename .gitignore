@@ -147,12 +147,12 @@ $RECYCLE.BIN/
 *.swo
 *~
 
-# Aqua-Analytics specific (데모용으로 샘플 데이터 포함)
-# aqua_analytics_data/ (데모용으로 포함)
+# Aqua-Analytics specific
+aqua_analytics_data/
 data/
-# *.xlsx (데모용으로 포함)
-# *.xls (데모용으로 포함)
-# *.csv (데모용으로 포함)
+*.xlsx
+*.xls
+*.csv
 !sample_data/
 python-installer.exe
 deployment_package.zip
